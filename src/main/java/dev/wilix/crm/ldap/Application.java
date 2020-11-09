@@ -12,10 +12,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 @SpringBootApplication
 public class Application implements CommandLineRunner {
 
+	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
+
 	@Autowired
 	LDAPListener listener;
-
-	private static Logger LOG = LoggerFactory.getLogger(Application.class);
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(Application.class, args);

@@ -81,11 +81,14 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
         LOG.info("Recieve bind request: {}", request);
 
-        if ((request.getCredentialsType() ==
-                BindRequestProtocolOp.CRED_TYPE_SIMPLE) &&
-                ((request.getSimplePassword() == null) ||
-                        request.getSimplePassword().getValueLength() == 0))
-        {
+        if (request.getCredentialsType() != BindRequestProtocolOp.CRED_TYPE_SIMPLE) {
+            return new LDAPMessage(messageID, new BindResponseProtocolOp(
+                    ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
+                    "Server supports only simple credentials.",
+                    null, null));
+        }
+
+        if ((request.getSimplePassword() == null) || request.getSimplePassword().getValueLength() == 0) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "The server has been configured to only allow bind operations that result in authenticated connections.  Anonymous bind operations are not allowed.",
@@ -191,6 +194,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                             StaticUtils.toList(le.getReferralURLs())),
                     le.getResponseControls());
         }
+
+        LOG.info("Search op finished successfully");
 
         // Успешное завершение операции.
         return new LDAPMessage(messageID,
