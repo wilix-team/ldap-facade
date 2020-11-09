@@ -14,6 +14,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +104,16 @@ public class CrmUserDataStorage implements UserDataStorage {
             jsonToUserFieldSetter.accept("user_name", value -> userInfo.put("uid", List.of(value)));
             jsonToUserFieldSetter.accept("fullname", value -> userInfo.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("email", value -> userInfo.put("mail", List.of(value)));
+
+            // атрибут для имени в vcs системах (git)
+            // youtrack несколько имен понимает через символ перевода каретки. Подстраиваемся под этот формат.
+            userInfo.put("vcsName", Collections.singletonList(""));
+            StringBuilder vcsName = new StringBuilder();
+            jsonToUserFieldSetter.accept("user_name", value -> vcsName.append(value));
+            jsonToUserFieldSetter.accept("email", value -> vcsName.append("\n").append(value));
+            userInfo.put("vcsName", Collections.singletonList(vcsName.toString()));
+
             // TODO Группы!!!
-            // TODO VCS names для корректной интеграции с VCS.
         }
 
         return userInfo;
