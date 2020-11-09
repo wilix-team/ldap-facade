@@ -21,3 +21,10 @@ keytool -importkeystore -deststorepass <passwd> -destkeypass <passwd> -destkeyst
 ## Запуск.
 
 TODO
+```bash
+ LISTENER_PORT=10637 LISTENER_KEYSTOREPATH='C:\Users\Van\sandbox\certs\fck.keystore' LISTENER_KEYSTOREPASS=wilix1234 java -Xmx20m -jar crm-ldap-facade-1.0-SNAPSHOT.jar
+```
+
+# Примерные настройки для клиента ldap аутентификации
+
+![youtrack settings](youtrack-settings.png "YouTrack settings")
