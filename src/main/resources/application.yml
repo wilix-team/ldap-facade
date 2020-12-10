@@ -1,5 +1,5 @@
 listener:
   port: 10636
-  sslEnabled: true
+  sslEnabled: false
   keyStorePath: C:\Users\Van\sandbox\certs\fck.keystore
   keyStorePass: wilix1234

@@ -74,7 +74,7 @@ public class CrmUserDataStorage implements UserDataStorage {
         users.put(username, userInfo);
     }
 
-    private HttpRequest buildHttpRequest(String username, String password) {
+    public static HttpRequest buildHttpRequest(String username, String password) {
         return HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(generateRequestBody(username, password)))
                 .uri(URI.create(STAFF_PORTAL_SSO_URI))
