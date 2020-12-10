@@ -14,8 +14,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +24,7 @@ import java.util.function.Consumer;
 
 /**
  * Храниилище пользователей, построенное на основе Wilix CRM.
- *
+ * <p>
  * TODO Возможно прсматривать какой-нибудь флаг заблокированности пользователя.
  */
 public class CrmUserDataStorage implements UserDataStorage {
@@ -127,4 +125,5 @@ public class CrmUserDataStorage implements UserDataStorage {
     public Map<String, List<String>> getUserInfo(String userName) {
         return users.getIfPresent(userName);
     }
+
 }

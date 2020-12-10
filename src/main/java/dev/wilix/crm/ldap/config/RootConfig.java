@@ -30,7 +30,7 @@ public class RootConfig {
 
     @Bean
     public LDAPListener ldapListener(LDAPListenerConfig listenerConfig) {
-       return new LDAPListener(listenerConfig);
+        return new LDAPListener(listenerConfig);
     }
 
     @Bean
@@ -64,4 +64,5 @@ public class RootConfig {
     public UserDataStorage userDataStorage() {
         return new CrmUserDataStorage();
     }
+
 }
