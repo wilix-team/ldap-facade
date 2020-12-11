@@ -4,6 +4,9 @@ import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
@@ -55,25 +58,31 @@ public class ListenerImplTest {
     }
 
     @Test
-    public void when200ThenSuccess() throws LDAPException, IOException, InterruptedException {
-        //Для успешного бинда нужно json тело иначе код будет OTHER_INT_VALUE (80)
-        when(response.body()).thenReturn("{\"result\":true,\"user\":{\"user_name\":\"admin\",\"first_name\":\"Администратор\",\"last_name\":\"Админ\",\"fullname\":\"Администратор Админ\",\"email\":\"admin@wilix.org\"}}");
-        when(response.statusCode()).thenReturn(200);
+    public void whenUserWithoutDCThenSuccess() throws InterruptedException, LDAPException, IOException {
+        setupSuccessResponseMock();
 
-        BindResult result = performDefaultBind();
+        BindResult result = performDefaultBind(false);
 
         LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
     }
 
+    @Test
+    public void whenUserWithDCThenSuccess() throws InterruptedException, LDAPException, IOException {
+        setupSuccessResponseMock();
+
+        BindResult result = performDefaultBind(true);
+
+        LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
+    }
 
     @Test
-    public void when401thenException() throws IOException, InterruptedException {
+    public void when401FromCRMThenException() throws IOException, InterruptedException {
         when(response.statusCode()).thenReturn(401);
 
         boolean exception = false;
 
         try {
-            performDefaultBind();
+            performDefaultBind(false);
         } catch (LDAPException e) {
             exception = true;
         }
@@ -81,19 +90,52 @@ public class ListenerImplTest {
         assertTrue(exception);
     }
 
+    @Test
+    public void searchTest() throws InterruptedException, LDAPException, IOException {
+        String loginPass = "admin";
 
-    private BindResult performDefaultBind() throws IOException, InterruptedException, LDAPException {
+        setupHttpClientForAuth(loginPass, loginPass);
+
+        LDAPConnection connection = openLDAP();
+        SearchResult result = connection.search(SearchRequest.ALL_OPERATIONAL_ATTRIBUTES, SearchScope.BASE, userUID(loginPass));
+        System.out.println(result);
+    }
+
+    private BindResult performDefaultBind(boolean withDC) throws IOException, InterruptedException, LDAPException {
         String loginPass = "admin";
 
         setupHttpClientForAuth(loginPass, loginPass);
 
         LDAPConnection ldap = openLDAP();
-        BindResult result = bind(ldap, loginPass, loginPass);
+        BindResult result = withDC ? bind(ldap, userDNWithDC(loginPass), loginPass)
+                : bind(ldap, userDN(loginPass), loginPass);
 
         ldap.close();
 
         return result;
     }
+
+    private LDAPConnection openLDAP() throws LDAPException {
+        return new LDAPConnection("localhost", appConfigurationProperties.getPort());
+    }
+
+    private BindResult bind(LDAPConnection ldap, String userDN, String password) throws LDAPException {
+        return ldap.bind(userDN, password);
+    }
+
+    private String userDNWithDC(String username) {
+        return String.format("uid=%s,ou=People,dc=wilix,dc=dev", username);
+    }
+
+    private String userDN(String username) {
+        return String.format("uid=%s,ou=People", username);
+    }
+
+    private String userUID(String loginPass) {
+        return String.format("uid=%s", loginPass);
+    }
+
+    // MOCKS
 
     private void setupHttpClientForAuth(String username, String password) throws IOException, InterruptedException {
         when(httpClient.send(
@@ -101,12 +143,10 @@ public class ListenerImplTest {
                 .thenReturn(response);
     }
 
-    private LDAPConnection openLDAP() throws LDAPException {
-        return new LDAPConnection("localhost", appConfigurationProperties.getPort());
-    }
-
-    private BindResult bind(LDAPConnection ldap, String username, String password) throws LDAPException {
-        return ldap.bind(String.format("uid=%s,ou=People,dc=wilix,dc=dev", username), password);
+    private void setupSuccessResponseMock() {
+        //Для успешного бинда нужно json тело иначе код будет OTHER_INT_VALUE (80)
+        when(response.body()).thenReturn("{\"result\":true,\"user\":{\"user_name\":\"admin\",\"first_name\":\"Администратор\",\"last_name\":\"Админ\",\"fullname\":\"Администратор Админ\",\"email\":\"admin@wilix.org\"}}");
+        when(response.statusCode()).thenReturn(200);
     }
 
 }
