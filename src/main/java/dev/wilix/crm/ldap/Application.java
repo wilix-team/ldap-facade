@@ -16,7 +16,7 @@ public class Application implements CommandLineRunner {
     @Autowired
     LDAPListener listener;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 

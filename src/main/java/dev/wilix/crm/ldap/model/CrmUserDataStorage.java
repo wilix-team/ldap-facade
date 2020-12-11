@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -23,41 +22,35 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Храниилище пользователей, построенное на основе Wilix CRM.
- * <p>
- * TODO Возможно прсматривать какой-нибудь флаг заблокированности пользователя.
+ * Хранилище пользователей, построенное на основе Wilix CRM.
  */
 public class CrmUserDataStorage implements UserDataStorage {
 
-    private static Logger LOG = LoggerFactory.getLogger(CrmUserDataStorage.class);
+    private final static Logger LOG = LoggerFactory.getLogger(CrmUserDataStorage.class);
+
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper) {
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
+    }
 
     // TODO Настройка
     private static final String STAFF_PORTAL_SSO_URI = "https://staff.wilix.org/red/api/sso/authenticate";
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     // TODO Сделать время хранения настройкой.
     private final Cache<String, Map<String, List<String>>> users = CacheBuilder.newBuilder()
             .expireAfterAccess(2, TimeUnit.MINUTES)
             .build();
 
+    //TODO Возможно просматривать какой-нибудь флаг заблокированности пользователя.
     @Override
     public boolean authenticate(String username, String password) throws IOException, InterruptedException {
-        HttpRequest crmRequest = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(generateRequestBody(username, password)))
-                .uri(URI.create(STAFF_PORTAL_SSO_URI))
-                .setHeader("User-Agent", "Ldap-facade")
-                .setHeader("Content-Type", "application/json; charset=utf-8")
-                .build();
+        HttpRequest crmRequest = buildHttpRequest(username, password);
 
         LOG.info("Send authenticate request to CRM for user: {}", username);
-
-        // FIXME В документации написано, что его можно много раз использовать,
-        //  но на деле после первого запроса все остальные виснут.
-        HttpClient httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
 
         HttpResponse<String> response = httpClient.send(crmRequest, HttpResponse.BodyHandlers.ofString());
 
@@ -68,12 +61,25 @@ public class CrmUserDataStorage implements UserDataStorage {
             return false;
         }
 
+        saveUser(username, response);
+
+        return true;
+    }
+
+    private void saveUser(String username, HttpResponse<String> response) throws JsonProcessingException {
         Map<String, List<String>> userInfo = parseUserInfo(response.body());
         LOG.info("Successfully parse user from CRM: {}", userInfo);
 
         users.put(username, userInfo);
+    }
 
-        return true;
+    public static HttpRequest buildHttpRequest(String username, String password) {
+        return HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(generateRequestBody(username, password)))
+                .uri(URI.create(STAFF_PORTAL_SSO_URI))
+                .setHeader("User-Agent", "Ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
+                .build();
     }
 
     private static String generateRequestBody(String username, String password) {

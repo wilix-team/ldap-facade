@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  */
 public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHandler {
 
-    private static Logger LOG = LoggerFactory.getLogger(UserBindAndSearchRequestHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UserBindAndSearchRequestHandler.class);
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -55,8 +55,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
     /**
      * Для первичного создания обработчика.
-     * <p>
-     * При работе слушатель содеинений будет использовать метод newInstance,
+     * При работе слушатель соединений будет использовать метод newInstance,
      * где уже присутствует экземпляр соединения.
      */
     public UserBindAndSearchRequestHandler(UserDataStorage userStorage) {

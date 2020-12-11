@@ -1,5 +1,6 @@
 package dev.wilix.crm.ldap.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unboundid.ldap.listener.LDAPListener;
 import com.unboundid.ldap.listener.LDAPListenerConfig;
 import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
@@ -16,8 +17,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(AppConfigurationProperties.class)
@@ -62,7 +65,20 @@ public class RootConfig {
 
     @Bean
     public UserDataStorage userDataStorage() {
-        return new CrmUserDataStorage();
+        return new CrmUserDataStorage(httpClient(), objectMapper());
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
 }
