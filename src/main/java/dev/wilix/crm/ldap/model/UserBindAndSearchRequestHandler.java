@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         final String userName;
         try {
             DN dn = new DN(concatRequestRDNsWithBase(request));
-            userName = extractUserNameFromDN(dn.toNormalizedString());
+            userName = extractUserNameFromDN(dn.toMinimallyEncodedString());
 
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException();
@@ -150,10 +151,10 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     }
 
     private RDN[] concatRequestRDNsWithBase(BindRequestProtocolOp request) throws LDAPException {
-        return ArrayUtils.addAll(
+        return Arrays.stream(ArrayUtils.addAll(
                 DN.getRDNs(request.getBindDN()),
                 BASE_DN.getRDNs()
-        );
+        )).distinct().toArray(RDN[]::new);
     }
 
     @Override
