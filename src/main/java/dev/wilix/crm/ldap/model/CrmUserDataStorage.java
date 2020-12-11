@@ -22,7 +22,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Храниилище пользователей, построенное на основе Wilix CRM.
+ * Хранилище пользователей, построенное на основе Wilix CRM.
  */
 public class CrmUserDataStorage implements UserDataStorage {
 
@@ -45,7 +45,7 @@ public class CrmUserDataStorage implements UserDataStorage {
             .expireAfterAccess(2, TimeUnit.MINUTES)
             .build();
 
-    //TODO Возможно прсматривать какой-нибудь флаг заблокированности пользователя.
+    //TODO Возможно просматривать какой-нибудь флаг заблокированности пользователя.
     @Override
     public boolean authenticate(String username, String password) throws IOException, InterruptedException {
         HttpRequest crmRequest = buildHttpRequest(username, password);
@@ -131,4 +131,5 @@ public class CrmUserDataStorage implements UserDataStorage {
     public Map<String, List<String>> getUserInfo(String userName) {
         return users.getIfPresent(userName);
     }
+
 }

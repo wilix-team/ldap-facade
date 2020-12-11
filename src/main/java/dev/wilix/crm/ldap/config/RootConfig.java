@@ -81,5 +81,4 @@ public class RootConfig {
         return new ObjectMapper();
     }
 
-
 }

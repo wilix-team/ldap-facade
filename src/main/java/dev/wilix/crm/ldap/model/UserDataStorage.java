@@ -1,7 +1,5 @@
 package dev.wilix.crm.ldap.model;
 
-import org.springframework.util.MultiValueMap;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -14,4 +12,5 @@ public interface UserDataStorage { // TODO ThreadSafe!
     boolean authenticate(String username, String password) throws IOException, InterruptedException;
 
     Map<String, List<String>> getUserInfo(String username);
+
 }

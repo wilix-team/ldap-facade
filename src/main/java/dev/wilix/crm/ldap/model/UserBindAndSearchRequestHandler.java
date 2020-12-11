@@ -9,12 +9,15 @@ import com.unboundid.ldap.protocol.LDAPMessage;
 import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
 import com.unboundid.ldap.protocol.SearchResultDoneProtocolOp;
 import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.util.Debug;
 import com.unboundid.util.StaticUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +35,16 @@ import java.util.regex.Pattern;
  */
 public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHandler {
 
-    private static Logger LOG = LoggerFactory.getLogger(UserBindAndSearchRequestHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UserBindAndSearchRequestHandler.class);
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=dev");
     private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.*)\\)");
+    private static final DN BASE_DN = new DN(
+            new RDN("dc", "wilix"),
+            new RDN("dc", "dev")
+    );
 
     private final LDAPListenerClientConnection connection;
 
@@ -48,8 +55,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
     /**
      * Для первичного создания обработчика.
-     *
-     * При работе слушатель содеинений будет использовать метод newInstance,
+     * При работе слушатель соединений будет использовать метод newInstance,
      * где уже присутствует экземпляр соединения.
      */
     public UserBindAndSearchRequestHandler(UserDataStorage userStorage) {
@@ -63,19 +69,10 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     }
 
     @Override
-    public LDAPListenerRequestHandler newInstance(LDAPListenerClientConnection connection) throws LDAPException {
+    public LDAPListenerRequestHandler newInstance(LDAPListenerClientConnection connection) {
         return new UserBindAndSearchRequestHandler(connection, userStorage);
     }
 
-    /**
-     * FIXME ОГРАНИЧНИЕ. Нет возможности вырвать из соединения базовый путь для логина. Нужно для байндинга указывать полный путь.
-     *      Например: uid=%u,ou=People,dc=wilix,dc=dev (Заместо: uid=%u,ou=People)
-     *
-     * @param messageID
-     * @param request
-     * @param controls
-     * @return
-     */
     @Override
     public LDAPMessage processBindRequest(int messageID, BindRequestProtocolOp request, List<Control> controls) {
 
@@ -98,7 +95,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         // FIXME Возможно потребуется учитывать схему, к которой создавалось подключение.
         final String userName;
         try {
-            userName = extractUserNameFromDN(request.getBindDN());
+            DN dn = new DN(concatRequestRDNsWithBase(request));
+            userName = extractUserNameFromDN(dn.toNormalizedString());
 
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException();
@@ -131,7 +129,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        if ( ! authResult) {
+        if (!authResult) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Username or password are wrong.",
@@ -151,13 +149,20 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                 responseControls);
     }
 
+    private RDN[] concatRequestRDNsWithBase(BindRequestProtocolOp request) throws LDAPException {
+        return ArrayUtils.addAll(
+                DN.getRDNs(request.getBindDN()),
+                BASE_DN.getRDNs()
+        );
+    }
+
     @Override
     public LDAPMessage processSearchRequest(int messageID, SearchRequestProtocolOp request, List<Control> controls) {
         LOG.info("Receive search request: {}", request);
 
         // Проверка на то, имена пользователей(который залогинился и которого ищут) совпадают.
         String userNameFromFilter = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
-        if (bindedUserName == null || ! bindedUserName.equals(userNameFromFilter)) {
+        if (bindedUserName == null || !bindedUserName.equals(userNameFromFilter)) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE, null,
                     "Search and bind user names not matched!",
@@ -215,7 +220,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     private String regExpFindFirstGroup(Pattern regExpPattern, String valueToScan) {
         Matcher matcher = regExpPattern.matcher(valueToScan);
 
-        if ( ! matcher.matches()) {
+        if (!matcher.matches()) {
             return null;
         }
 

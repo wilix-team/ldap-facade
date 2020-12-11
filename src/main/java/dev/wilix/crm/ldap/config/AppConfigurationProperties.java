@@ -51,4 +51,5 @@ public class AppConfigurationProperties {
     public void setKeyStorePass(String keyStorePass) {
         this.keyStorePass = keyStorePass;
     }
+
 }
