@@ -41,8 +41,9 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=dev");
-    private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.*)\\)");
+    private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+[^)])\\)");
     private static final DN BASE_DN = new DN(
+            new RDN("ou", "People"),
             new RDN("dc", "wilix"),
             new RDN("dc", "dev")
     );
@@ -77,9 +78,10 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     @Override
     public LDAPMessage processBindRequest(int messageID, BindRequestProtocolOp request, List<Control> controls) {
 
-        LOG.info("Recieve bind request: {}", request);
+        LOG.info("Receive bind request: {}", request);
 
         if (request.getCredentialsType() != BindRequestProtocolOp.CRED_TYPE_SIMPLE) {
+            LOG.warn("Not simple request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Server supports only simple credentials.",
@@ -87,6 +89,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         if ((request.getSimplePassword() == null) || request.getSimplePassword().getValueLength() == 0) {
+            LOG.warn("No password in request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "The server has been configured to only allow bind operations that result in authenticated connections.  Anonymous bind operations are not allowed.",
@@ -96,10 +99,20 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         // FIXME Возможно потребуется учитывать схему, к которой создавалось подключение.
         final String userName;
         try {
-            DN dn = new DN(concatRequestRDNsWithBase(request));
+            String bindDN = request.getBindDN();
+
+            LOG.info("Before concat {}", bindDN);
+
+            if (!request.getBindDN().contains("uid")) {
+                bindDN = "uid=" + bindDN;
+            }
+
+            DN dn = new DN(concatRequestRDNsWithBase(bindDN));
+            LOG.info("After concat {}", dn);
             userName = extractUserNameFromDN(dn.toMinimallyEncodedString());
 
             if (userName == null || userName.isBlank()) {
+                LOG.warn("No username in request {}", request);
                 throw new IllegalArgumentException();
             }
         } catch (Exception e) {
@@ -113,6 +126,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         final String password = bindPassword.stringValue();
 
         if (StringUtils.isBlank(password)) {
+            LOG.warn("Blank password in request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Username or password are wrong.",
@@ -131,6 +145,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         if (!authResult) {
+            LOG.warn("Wrong auth for request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Username or password are wrong.",
@@ -150,9 +165,9 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                 responseControls);
     }
 
-    private RDN[] concatRequestRDNsWithBase(BindRequestProtocolOp request) throws LDAPException {
+    private RDN[] concatRequestRDNsWithBase(String bindDN) throws LDAPException {
         return Arrays.stream(ArrayUtils.addAll(
-                DN.getRDNs(request.getBindDN()),
+                DN.getRDNs(bindDN),
                 BASE_DN.getRDNs()
         )).distinct().toArray(RDN[]::new);
     }
@@ -201,7 +216,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     le.getResponseControls());
         }
 
-        LOG.info("Search op finished successfully");
+        LOG.info("Search op finished successfully with result {}", resultEntry);
 
         // Успешное завершение операции.
         return new LDAPMessage(messageID,
@@ -221,7 +236,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     private String regExpFindFirstGroup(Pattern regExpPattern, String valueToScan) {
         Matcher matcher = regExpPattern.matcher(valueToScan);
 
-        if (!matcher.matches()) {
+        if (!matcher.find()) {
             return null;
         }
 
