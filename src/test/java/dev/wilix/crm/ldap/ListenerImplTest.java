@@ -91,26 +91,31 @@ public class ListenerImplTest {
     }
 
     @Test
-    public void searchTest() throws InterruptedException, LDAPException, IOException {
+    public void bindAndSearchTest() throws InterruptedException, LDAPException, IOException {
         String loginPass = "admin";
-
+        setupSuccessResponseMock();
         setupHttpClientForAuth(loginPass, loginPass);
 
-        LDAPConnection connection = openLDAP();
-        SearchResult result = connection.search(SearchRequest.ALL_OPERATIONAL_ATTRIBUTES, SearchScope.BASE, userUID(loginPass));
-        System.out.println(result);
+        LDAPConnection ldap = openLDAP();
+
+        bind(ldap, userDN(loginPass), loginPass);
+        SearchResult result = ldap.search(SearchRequest.ALL_USER_ATTRIBUTES, SearchScope.BASE, userUID(loginPass));
+
+        ldap.close();
+
+        LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
     }
 
     private BindResult performDefaultBind(boolean withDC) throws IOException, InterruptedException, LDAPException {
         String loginPass = "admin";
-
         setupHttpClientForAuth(loginPass, loginPass);
 
-        LDAPConnection ldap = openLDAP();
-        BindResult result = withDC ? bind(ldap, userDNWithDC(loginPass), loginPass)
-                : bind(ldap, userDN(loginPass), loginPass);
+        BindResult result = null;
 
-        ldap.close();
+        try (LDAPConnection ldap = openLDAP()) {
+            result = withDC ? bind(ldap, userDNWithDC(loginPass), loginPass)
+                    : bind(ldap, userDN(loginPass), loginPass);
+        }
 
         return result;
     }
