@@ -41,7 +41,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=dev");
-    private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+[^)])\\)");
+    private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+?)\\)");
     private static final DN BASE_DN = new DN(
             new RDN("ou", "People"),
             new RDN("dc", "wilix"),
@@ -96,19 +96,19 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        // FIXME Возможно потребуется учитывать схему, к которой создавалось подключение.
         final String userName;
         try {
             String bindDN = request.getBindDN();
 
-            LOG.info("Before concat {}", bindDN);
+            LOG.debug("Bind DN before concat {}", bindDN);
 
+            // TODO Создано из-за некоторых особенностей работы openVPN
             if (!request.getBindDN().contains("uid")) {
                 bindDN = "uid=" + bindDN;
             }
 
             DN dn = new DN(concatRequestRDNsWithBase(bindDN));
-            LOG.info("After concat {}", dn);
+            LOG.debug("Bind DN after concat {}", dn);
             userName = extractUserNameFromDN(dn.toMinimallyEncodedString());
 
             if (userName == null || userName.isBlank()) {
@@ -145,7 +145,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         if (!authResult) {
-            LOG.warn("Wrong auth for request {}", request);
+            LOG.warn("Bad auth result from CRM for request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Username or password are wrong.",
@@ -176,7 +176,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public LDAPMessage processSearchRequest(int messageID, SearchRequestProtocolOp request, List<Control> controls) {
         LOG.info("Receive search request: {}", request);
 
-        // Проверка на то, имена пользователей(который залогинился и которого ищут) совпадают.
+        // Вытаскиваем имя пользователя из фильтра для поиска.
         String userNameFromFilter = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
         if (userNameFromFilter == null) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(

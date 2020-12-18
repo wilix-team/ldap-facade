@@ -1,5 +1,8 @@
 FROM adoptopenjdk/openjdk11:alpine
-COPY crm-ldap-facade-*.jar /opt/facade/app.jar
+
 WORKDIR /opt/facade
 EXPOSE 10636
+
+COPY *.jar ./app.jar
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
