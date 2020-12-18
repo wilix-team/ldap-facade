@@ -17,7 +17,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.net.ssl.SSLParameters;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -71,14 +70,8 @@ public class RootConfig {
 
     @Bean
     public HttpClient httpClient() {
-        //TODO отловить что с 1.1 нет фризов
-        //Устанавливаем протокол TLSv1.1 тк 1.2 и 1.3 имеют проблемы синхронизации
-        SSLParameters params = new SSLParameters();
-        params.setProtocols(new String[]{"TLSv1.1"});
-
         return HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .sslParameters(params)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
