@@ -178,15 +178,15 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
         // Проверка на то, имена пользователей(который залогинился и которого ищут) совпадают.
         String userNameFromFilter = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
-        if (bindedUserName == null || !bindedUserName.equals(userNameFromFilter)) {
+        if (userNameFromFilter == null) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE, null,
-                    "Search and bind user names not matched!",
+                    "No username in filter!",
                     null, null));
         }
 
         // Поиск атрибутов пользователя.
-        Map<String, List<String>> userInfo = userStorage.getUserInfo(bindedUserName);
+        Map<String, List<String>> userInfo = userStorage.getUserInfo(userNameFromFilter);
         if (userInfo == null || userInfo.isEmpty()) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.NO_SUCH_OBJECT_INT_VALUE, null,
@@ -195,7 +195,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         // Подготовка ответа в формате ldap.
-        Entry entry = new Entry(bindedUserName);
+        Entry entry = new Entry(userNameFromFilter);
         for (String requestedAttributeName : request.getAttributes()) {
             final List<String> attributeValues = userInfo
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
