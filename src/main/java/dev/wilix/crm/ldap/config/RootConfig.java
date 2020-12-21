@@ -41,21 +41,23 @@ public class RootConfig {
 
         LDAPListenerConfig ldapListenerConfig = new LDAPListenerConfig(config.getPort(), requestHandler);
 
-        // TODO Нужно сделать это настройкой.
         if (config.isSslEnabled()) {
             LOG.info("SSL is turned on. Configuring...");
 
-            String serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
-            KeyStoreKeyManager keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
-            final SSLUtil serverSSLUtil = new SSLUtil(keyManager, null);
-
-            ldapListenerConfig.setServerSocketFactory(serverSSLUtil.createSSLServerSocketFactory("TLSv1.2"));
+            configureSSL(ldapListenerConfig);
         } else {
             LOG.info("SSL is turned off...");
         }
 
-
         return ldapListenerConfig;
+    }
+
+    private void configureSSL(LDAPListenerConfig ldapListenerConfig) throws GeneralSecurityException {
+        String serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
+        KeyStoreKeyManager keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
+        final SSLUtil serverSSLUtil = new SSLUtil(keyManager, null);
+
+        ldapListenerConfig.setServerSocketFactory(serverSSLUtil.createSSLServerSocketFactory("TLSv1.2"));
     }
 
     @Bean
@@ -65,7 +67,7 @@ public class RootConfig {
 
     @Bean
     public UserDataStorage userDataStorage() {
-        return new CrmUserDataStorage(httpClient(), objectMapper());
+        return new CrmUserDataStorage(httpClient(), objectMapper(), config);
     }
 
     @Bean

@@ -7,10 +7,10 @@ import java.util.Map;
 /**
  * Интеграционный интерфейс для получения данных из внешнего источника.
  */
-public interface UserDataStorage { // TODO ThreadSafe!
+public interface UserDataStorage {
 
     boolean authenticate(String username, String password) throws IOException, InterruptedException;
 
-    Map<String, List<String>> getUserInfo(String username);
+    Map<String, List<String>> getUserInfo(String username, boolean equals) throws IOException, InterruptedException;
 
 }

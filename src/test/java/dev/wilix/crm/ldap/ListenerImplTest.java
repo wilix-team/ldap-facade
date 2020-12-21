@@ -4,14 +4,12 @@ import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
 import dev.wilix.crm.ldap.config.AppConfigurationProperties;
-import dev.wilix.crm.ldap.model.CrmUserDataStorage;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -20,7 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -32,11 +32,13 @@ import static org.mockito.Mockito.when;
 public class ListenerImplTest {
 
     @Autowired
-    AppConfigurationProperties appConfigurationProperties;
+    AppConfigurationProperties config;
     @MockBean
     HttpClient httpClient;
     @Mock
     HttpResponse<String> response;
+
+    private final String BASE_DN = "ou=People,dc=wilix,dc=dev";
 
     @Test
     @Disabled("Нужно доработать тесты, моки и т.д.")
@@ -47,7 +49,7 @@ public class ListenerImplTest {
 //        final SSLUtil serverSSLUtil = new SSLUtil(null, new TrustAllTrustManager());
 
         LDAPConnection connection = new LDAPConnection(serverSSLUtil.createSSLSocketFactory("TLSv1.2"), "fckapp.s2.wilix.dev",
-                appConfigurationProperties.getPort());
+                config.getPort());
 
         // TODO Переделать на мокирование информации и пользвателе.
         BindResult result = connection.bind("uid=stanislav.melnichuk,ou=People,dc=wilix,dc=dev", "FIXME");
@@ -58,31 +60,13 @@ public class ListenerImplTest {
     }
 
     @Test
-    public void whenUserWithoutDCThenSuccess() throws InterruptedException, LDAPException, IOException {
-        setupSuccessResponseMock();
-
-        BindResult result = performDefaultBind(false);
-
-        LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
-    }
-
-    @Test
-    public void whenUserWithDCThenSuccess() throws InterruptedException, LDAPException, IOException {
-        setupSuccessResponseMock();
-
-        BindResult result = performDefaultBind(true);
-
-        LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
-    }
-
-    @Test
     public void when401FromCRMThenException() throws IOException, InterruptedException {
         when(response.statusCode()).thenReturn(401);
 
         boolean exception = false;
 
         try {
-            performDefaultBind(false);
+            performBind("admin", "admin");
         } catch (LDAPException e) {
             exception = true;
         }
@@ -92,65 +76,74 @@ public class ListenerImplTest {
 
     @Test
     public void bindAndSearchTest() throws InterruptedException, LDAPException, IOException {
-        String loginPass = "admin";
+        String loginPass = "ldap-service";
         setupSuccessResponseMock();
-        setupHttpClientForAuth(loginPass, loginPass);
 
         LDAPConnection ldap = openLDAP();
 
-        bind(ldap, userDN(loginPass), loginPass);
-        SearchResult result = ldap.search(SearchRequest.ALL_USER_ATTRIBUTES, SearchScope.BASE, userUID(loginPass));
+        BindResult bindResult = performBind(loginPass, config.getCrmToken());
+
+        SearchResult searchResult = ldap.search(BASE_DN, SearchScope.SUB, generateFilter("maxim.yanchuk"));
 
         ldap.close();
 
-        LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
+        LDAPTestUtils.assertResultCodeEquals(bindResult, ResultCode.SUCCESS);
+        LDAPTestUtils.assertResultCodeEquals(searchResult, ResultCode.SUCCESS);
     }
 
-    private BindResult performDefaultBind(boolean withDC) throws IOException, InterruptedException, LDAPException {
-        String loginPass = "admin";
-        setupHttpClientForAuth(loginPass, loginPass);
+    private String generateFilter(String loginPass) {
+        return String.format("(uid=%s)", loginPass);
+    }
+
+    private BindResult performBind(String login, String password) throws IOException, InterruptedException, LDAPException {
+        setupHttpClientForAuth();
 
         BindResult result = null;
 
         try (LDAPConnection ldap = openLDAP()) {
-            result = withDC ? bind(ldap, userDNWithDC(loginPass), loginPass)
-                    : bind(ldap, userDN(loginPass), loginPass);
+            result = bind(ldap, login, password);
         }
 
         return result;
     }
 
     private LDAPConnection openLDAP() throws LDAPException {
-        return new LDAPConnection("localhost", appConfigurationProperties.getPort());
+        return new LDAPConnection("localhost", config.getPort());
     }
 
     private BindResult bind(LDAPConnection ldap, String userDN, String password) throws LDAPException {
         return ldap.bind(userDN, password);
     }
 
-    private String userDNWithDC(String username) {
-        return String.format("uid=%s,ou=People,dc=wilix,dc=dev", username);
+    public HttpRequest buildApplicationHttpRequest() {
+        return HttpRequest.newBuilder()
+                .GET()
+                .uri(generateApplicationRequestURI("maxim.yanchuk"))
+                .setHeader("User", "ldap-service")
+                .setHeader("X-Api-Key", config.getCrmToken())
+                .build();
     }
 
-    private String userDN(String username) {
-        return String.format("uid=%s,ou=People", username);
-    }
-
-    private String userUID(String loginPass) {
-        return String.format("uid=%s", loginPass);
+    private URI generateApplicationRequestURI(String username) {
+        return URI.create(
+                config.getCrmURI() + String.format("?select=emailAddress" +
+                        "&where[0][attribute]=userName" +
+                        "&where[0][value]=%s" +
+                        "&where[0][type]=equals", username)
+        );
     }
 
     // MOCKS
 
-    private void setupHttpClientForAuth(String username, String password) throws IOException, InterruptedException {
+    private void setupHttpClientForAuth() throws IOException, InterruptedException {
         when(httpClient.send(
-                CrmUserDataStorage.buildHttpRequest(username, password), HttpResponse.BodyHandlers.ofString()))
+                buildApplicationHttpRequest(), HttpResponse.BodyHandlers.ofString()))
                 .thenReturn(response);
     }
 
     private void setupSuccessResponseMock() {
         //Для успешного бинда нужно json тело иначе код будет OTHER_INT_VALUE (80)
-        when(response.body()).thenReturn("{\"result\":true,\"user\":{\"user_name\":\"admin\",\"first_name\":\"Администратор\",\"last_name\":\"Админ\",\"fullname\":\"Администратор Админ\",\"email\":\"admin@wilix.org\"}}");
+        when(response.body()).thenReturn("{\"total\":1,\"list\":[{\"id\":\"5f7ad9914f960a46f\",\"name\":\"\\u042f\\u043d\\u0447\\u0443\\u043a \\u041c\\u0430\\u043a\\u0441\\u0438\\u043c\",\"isAdmin\":false,\"userName\":\"maxim.yanchuk\",\"type\":\"regular\",\"salutationName\":\"\",\"firstName\":\"\\u041c\\u0430\\u043a\\u0441\\u0438\\u043c\",\"lastName\":\"\\u042f\\u043d\\u0447\\u0443\\u043a\",\"isActive\":true,\"isPortalUser\":false,\"emailAddress\":\"maxim.yanchuk@wilix.org\",\"middleName\":\"\\u041f\\u0435\\u0442\\u0440\\u043e\\u0432\\u0438\\u0447\",\"createdById\":\"1\"}]}");
         when(response.statusCode()).thenReturn(200);
     }
 
