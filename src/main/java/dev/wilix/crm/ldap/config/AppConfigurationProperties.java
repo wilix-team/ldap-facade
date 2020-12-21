@@ -24,8 +24,6 @@ public class AppConfigurationProperties {
 
     private String crmURI;
 
-    private String crmToken;
-
     private int expireTime;
 
     public int getPort() {
@@ -74,14 +72,6 @@ public class AppConfigurationProperties {
 
     public void setCrmURI(String crmURI) {
         this.crmURI = crmURI;
-    }
-
-    public String getCrmToken() {
-        return crmToken;
-    }
-
-    public void setCrmToken(String crmToken) {
-        this.crmToken = crmToken;
     }
 
     public int getExpireTime() {

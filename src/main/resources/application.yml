@@ -6,4 +6,3 @@ listener:
   expireTime: 2
   staffURI: https://staff.wilix.org/red/api/sso/authenticate
   crmURI: https://crm.wilix.org/api/v1/User
-  crmToken: 616aa9c5a3c7d1a4f9c758ed4d90b9de

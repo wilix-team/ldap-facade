@@ -13,6 +13,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.sdk.controls.AuthorizationIdentityResponseControl;
 import com.unboundid.util.Debug;
 import com.unboundid.util.StaticUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +40,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     private final UserDataStorage userStorage;
 
     private String bindUser;
+    private String bindPassword;
 
 
     /**
@@ -68,7 +69,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         LOG.info("Receive bind request: {}", request);
 
         if (request.getCredentialsType() != BindRequestProtocolOp.CRED_TYPE_SIMPLE) {
-            LOG.warn("Not simple request {}", request);
+            LOG.warn("Not a simple request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Server supports only simple credentials.",
@@ -83,18 +84,18 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        final String userName;
+        final String username;
         try {
-            userName = request.getBindDN();
+            username = request.getBindDN();
 
-            if (userName == null || userName.isBlank()) {
+            if (username == null || username.isBlank()) {
                 LOG.warn("No username in request {}", request);
                 throw new IllegalArgumentException();
             }
         } catch (Exception e) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_DN_SYNTAX_INT_VALUE, null,
-                    "There is not correct user DN.",
+                    "No username in request",
                     null, null));
         }
 
@@ -111,12 +112,12 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
         boolean authResult;
         try {
-            authResult = userStorage.authenticate(userName, password);
+            authResult = userStorage.authenticate(username, password);
         } catch (IOException | InterruptedException e) {
-            LOG.error("Errors occured when requesting CRM", e);
+            LOG.error("Errors occurred when requesting CRM", e);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.CONNECT_ERROR_INT_VALUE, request.getBindDN(),
-                    String.format("CRM request Error: %s", e.getMessage()),
+                    String.format("Error in CRM request: %s", e.getMessage()),
                     null, null));
         }
 
@@ -128,15 +129,14 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        final ArrayList<Control> responseControls = new ArrayList<>(1);
-
-        bindUser = userName;
-        LOG.info("User {} binded successfully.", userName);
+        this.bindUser = username;
+        this.bindPassword = password;
+        LOG.info("User {} binded successfully.", username);
 
         return new LDAPMessage(messageID,
                 new BindResponseProtocolOp(ResultCode.SUCCESS_INT_VALUE, null,
                         null, null, null),
-                responseControls);
+                List.of(new AuthorizationIdentityResponseControl("")));
     }
 
     @Override
@@ -153,25 +153,25 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         // Поиск атрибутов пользователя.
-        Map<String, List<String>> userInfo = null;
+        Map<String, List<String>> info = null;
         try {
-            userInfo = userStorage.getUserInfo(username, true);
-//            userInfo = userStorage.getUserInfo(username, bindUser.equals("ldap-service"));
+            info = userStorage.getInfo(username, bindUser, bindPassword);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        if (userInfo == null || userInfo.isEmpty()) {
-            LOG.warn("No user info for user {}", username);
+
+        if (info == null || info.isEmpty()) {
+            LOG.warn("No info for {}", username);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.NO_SUCH_OBJECT_INT_VALUE, null,
-                    "User not found!",
+                    "Info not found!",
                     null, null));
         }
 
         // Подготовка ответа в формате ldap.
         Entry entry = new Entry(username);
         for (String requestedAttributeName : request.getAttributes()) {
-            final List<String> attributeValues = userInfo
+            final List<String> attributeValues = info
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
@@ -189,7 +189,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     le.getResponseControls());
         }
 
-        LOG.info("Search op finished successfully with result {}", resultEntry);
+        LOG.info("Search operation finished successfully with result {}", resultEntry);
 
         // Успешное завершение операции.
         return new LDAPMessage(messageID,

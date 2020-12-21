@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,8 @@ public class CrmUserDataStorage implements UserDataStorage {
 
     private final String STAFF_URI;
     private final String CRM_URI;
-    private final String CRM_TOKEN;
+
+    private static final List<String> SERVICE_NAMES = List.of("ldap-service");
 
     public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, AppConfigurationProperties config) {
         this.httpClient = httpClient;
@@ -45,67 +45,54 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .build();
         STAFF_URI = config.getStaffURI();
         CRM_URI = config.getCrmURI();
-        CRM_TOKEN = config.getCrmToken();
     }
-    
-    //TODO Возможно просматривать какой-нибудь флаг заблокированности пользователя.
+
     @Override
     public boolean authenticate(String username, String password) throws IOException, InterruptedException {
-        if (username.equals("ldap-service")) {
-            if (password.equals(CRM_TOKEN)) {
-                LOG.info("{} service bind", username);
-                saveUser(username, serviceBody());
-                return true;
-            }
-            LOG.warn("Wrong service password for service {}", username);
-            return false;
+        if (SERVICE_NAMES.contains(username)) {
+            return getServiceInfo(username, password);
         } else {
-            return getUserInfoByAuthRequest(username, password);
+            return getInfoByRequestToStaff(username, password);
         }
     }
 
-    private void saveUser(String username, String body) throws JsonProcessingException {
-        Map<String, List<String>> userInfo = parseUserInfo(body);
-        LOG.info("Successfully parse user: {}", userInfo);
-
-        users.put(username, userInfo);
+    private boolean getServiceInfo(String username, String password) throws IOException, InterruptedException {
+        if (getInfoByRequestToCRM(username, password)) {
+            LOG.info("{} service binded", username);
+            return true;
+        } else {
+            LOG.warn("Wrong service password for service {}", username);
+            return false;
+        }
     }
 
-    private String serviceBody() {
-        return "{\"result\":true,\"user\":{\"user_name\":\"LDAP\",\"first_name\":\"LDAP\",\"last_name\":\"Service\",\"fullname\":\"LDAP Service\",\"email\":\"null\"}}";
+    private boolean getInfoByRequestToCRM(String username, String bindPassword) throws IOException, InterruptedException {
+        HttpRequest request = buildHttpRequestToCRM(username, bindPassword);
+
+        LOG.info("Send authentication request to CRM for {}", username);
+
+        return sendRequestAndSaveInfo(request, username);
     }
 
-    /**
-     * Отправляет запрос на получение информации о пользователе с логином&паролем на STAFF_URI
-     */
-    private boolean getUserInfoByAuthRequest(String username, String password) throws IOException, InterruptedException {
-        HttpRequest crmRequest = buildAuthHttpRequest(username, password);
-
-        LOG.info("Send authenticate request to CRM for user: {}", username);
-
-        return performRequest(username, crmRequest);
-    }
-
-    /**
-     * Подготавливает запрос для STAFF_URI
-     */
-    public HttpRequest buildAuthHttpRequest(String username, String password) {
+    private HttpRequest buildHttpRequestToCRM(String username, String bindPassword) {
         return HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(generateAuthRequestBody(username, password)))
-                .uri(URI.create(STAFF_URI))
-                .setHeader("User-Agent", "ldap-facade")
-                .setHeader("Content-Type", "application/json; charset=utf-8")
+                .GET()
+                .uri(buildRequestURItoCRM(username))
+                .setHeader("User", "ldap-service")
+                .setHeader("X-Api-Key", bindPassword)
                 .build();
     }
 
-    private static String generateAuthRequestBody(String username, String password) {
-        return String.format("{\"username\": \"%1$s\",\"password\": \"%2$s\"}", username, password);
+    private URI buildRequestURItoCRM(String username) {
+        return URI.create(
+                CRM_URI + String.format("?select=emailAddress" +
+                        "&where[0][attribute]=userName" +
+                        "&where[0][value]=%s" +
+                        "&where[0][type]=equals", username)
+        );
     }
 
-    /**
-     * Отправляет запрос
-     */
-    private boolean performRequest(String username, HttpRequest crmRequest) throws IOException, InterruptedException {
+    private boolean sendRequestAndSaveInfo(HttpRequest crmRequest, String username) throws IOException, InterruptedException {
         HttpResponse<String> response = httpClient.send(crmRequest, HttpResponse.BodyHandlers.ofString());
 
         LOG.info("Receive response from CRM: {}", response);
@@ -115,60 +102,62 @@ public class CrmUserDataStorage implements UserDataStorage {
             return false;
         }
 
-        saveUser(username, response.body());
+        try {
+            saveUser(username, response.body());
+        } catch (Exception e) {
+            LOG.warn("Cant save {} info {}", username, response.body());
+            return false;
+        }
+
         return true;
     }
 
-    /**
-     * Отправляет запрос от имени сервиса на CRM_URI
-     */
-    private void getUserInfoByApplicationRequest(String username) throws IOException, InterruptedException {
-        HttpRequest crmRequest = buildApplicationHttpRequest(username);
+    private void saveUser(String username, String responseBody) throws JsonProcessingException {
+        Map<String, List<String>> info = parseInfo(responseBody);
+        LOG.info("Successfully parse info: {}", info);
 
-        LOG.info("Send application request to CRM for user: {}", username);
-
-        performRequest(username, crmRequest);
+        users.put(username, info);
     }
 
-    /**
-     * Подготавливает запрос для CRM_URI
-     */
-    public HttpRequest buildApplicationHttpRequest(String username) {
+    //TODO Возможно просматривать какой-нибудь флаг заблокированности пользователя.
+    private boolean getInfoByRequestToStaff(String username, String password) throws IOException, InterruptedException {
+        HttpRequest request = buildHttpRequestToStaff(username, password);
+
+        LOG.info("Send authentication request to STAFF for {}", username);
+
+        return sendRequestAndSaveInfo(request, username);
+    }
+
+    private HttpRequest buildHttpRequestToStaff(String username, String password) {
         return HttpRequest.newBuilder()
-                .GET()
-                .uri(generateApplicationRequestURI(username))
-                .setHeader("User", "ldap-service")
-                .setHeader("X-Api-Key", CRM_TOKEN)
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBodyToStaff(username, password)))
+                .uri(URI.create(STAFF_URI))
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
                 .build();
     }
 
-    private URI generateApplicationRequestURI(String username) {
-        return URI.create(
-                CRM_URI + String.format("?select=emailAddress" +
-                        "&where[0][attribute]=userName" +
-                        "&where[0][value]=%s" +
-                        "&where[0][type]=equals", username)
-        );
+    private  String buildRequestBodyToStaff(String username, String password) {
+        return String.format("{\"username\": \"%1$s\",\"password\": \"%2$s\"}", username, password);
     }
 
     /**
      * Парсинг атрибутов пользователя из CRM формата в LDAP формат.
      */
-    private Map<String, List<String>> parseUserInfo(String body) throws JsonProcessingException {
-        Map<String, List<String>> userInfo = new HashMap<>();
-        userInfo.put("company", List.of("WILIX"));
-
+    private Map<String, List<String>> parseInfo(String body) throws JsonProcessingException {
         JsonNode responseNode = objectMapper.readTree(body);
-        boolean isAPI = false;
+        boolean isCRM = false;
 
-        //Auth request
+        //STAFF request
         JsonNode userJsonField = responseNode.get("user");
 
-        //Application request
+        //CRM request
         if (userJsonField == null) {
-            isAPI = true;
+            isCRM = true;
             userJsonField = responseNode.get("list").get(0);
         }
+
+        Map<String, List<String>> info = new HashMap<>();
 
         if (userJsonField != null) {
             JsonNode finalUserJsonField = userJsonField;
@@ -179,56 +168,54 @@ public class CrmUserDataStorage implements UserDataStorage {
                 }
             };
 
-            if (isAPI) {
-                parseFromAPI(userInfo, jsonToUserFieldSetter);
+            if (isCRM) {
+                parseInfoFromCRM(info, jsonToUserFieldSetter);
             } else {
-                parseFromCRM(userInfo, jsonToUserFieldSetter);
+                parseInfoFromStaff(info, jsonToUserFieldSetter);
             }
+
+            info.put("company", List.of("WILIX"));
         }
 
-        return userInfo;
+        return info;
     }
 
-    private void parseFromAPI(Map<String, List<String>> userInfo, BiConsumer<String, Consumer<String>> jsonToUserFieldSetter) {
-        jsonToUserFieldSetter.accept("userName", value -> userInfo.put("uid", List.of(value)));
-        jsonToUserFieldSetter.accept("name", value -> userInfo.put("cn", List.of(value)));
-        jsonToUserFieldSetter.accept("emailAddress", value -> userInfo.put("mail", List.of(value)));
+    private void parseInfoFromCRM(Map<String, List<String>> info, BiConsumer<String, Consumer<String>> jsonToUserFieldSetter) {
+        jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
+        jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
+        jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
 
         // атрибут для имени в vcs системах (git)
         // youtrack несколько имен понимает через символ перевода каретки. Подстраиваемся под этот формат.
         StringBuilder vcsName = new StringBuilder();
-        jsonToUserFieldSetter.accept("name", value -> vcsName.append(value));
+        jsonToUserFieldSetter.accept("name", vcsName::append);
         jsonToUserFieldSetter.accept("emailAddress", value -> vcsName.append("\n").append(value));
-        userInfo.put("vcsName", Collections.singletonList(vcsName.toString()));
+        info.put("vcsName", List.of(vcsName.toString()));
 
         // TODO Группы!!!
     }
 
-    private void parseFromCRM(Map<String, List<String>> userInfo, BiConsumer<String, Consumer<String>> jsonToUserFieldSetter) {
-        jsonToUserFieldSetter.accept("user_name", value -> userInfo.put("uid", List.of(value)));
-        jsonToUserFieldSetter.accept("fullname", value -> userInfo.put("cn", List.of(value)));
-        jsonToUserFieldSetter.accept("email", value -> userInfo.put("mail", List.of(value)));
+    private void parseInfoFromStaff(Map<String, List<String>> info, BiConsumer<String, Consumer<String>> jsonToUserFieldSetter) {
+        jsonToUserFieldSetter.accept("user_name", value -> info.put("uid", List.of(value)));
+        jsonToUserFieldSetter.accept("fullname", value -> info.put("cn", List.of(value)));
+        jsonToUserFieldSetter.accept("email", value -> info.put("mail", List.of(value)));
 
         // атрибут для имени в vcs системах (git)
         // youtrack несколько имен понимает через символ перевода каретки. Подстраиваемся под этот формат.
         StringBuilder vcsName = new StringBuilder();
-        jsonToUserFieldSetter.accept("user_name", value -> vcsName.append(value));
+        jsonToUserFieldSetter.accept("user_name", vcsName::append);
         jsonToUserFieldSetter.accept("email", value -> vcsName.append("\n").append(value));
-        userInfo.put("vcsName", Collections.singletonList(vcsName.toString()));
+        info.put("vcsName", List.of(vcsName.toString()));
 
         // TODO Группы!!!
     }
 
-    /**
-     * Пользователь уже был получен и распаршен во время аутентификации.
-     * Просто получаем его.
-     */
     @Override
-    public Map<String, List<String>> getUserInfo(String username, boolean isService) throws IOException, InterruptedException {
+    public Map<String, List<String>> getInfo(String username, String bindUser, String bindPassword) throws IOException, InterruptedException {
         var info = users.getIfPresent(username);
 
-        if (info == null && isService) {
-            getUserInfoByApplicationRequest(username);
+        if (info == null && SERVICE_NAMES.contains(bindUser)) {
+            getInfoByRequestToCRM(username, bindPassword);
             info = users.getIfPresent(username);
         }
 

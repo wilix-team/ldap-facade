@@ -11,6 +11,6 @@ public interface UserDataStorage {
 
     boolean authenticate(String username, String password) throws IOException, InterruptedException;
 
-    Map<String, List<String>> getUserInfo(String username, boolean equals) throws IOException, InterruptedException;
+    Map<String, List<String>> getInfo(String username, String bindUser, String bindPassword) throws IOException, InterruptedException;
 
 }
