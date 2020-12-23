@@ -20,12 +20,6 @@ public class AppConfigurationProperties {
 
     private String keyStorePass;
 
-    private String staffURI;
-
-    private String crmURI;
-
-    private int expireTime;
-
     public int getPort() {
         return port;
     }
@@ -56,30 +50,6 @@ public class AppConfigurationProperties {
 
     public void setKeyStorePass(String keyStorePass) {
         this.keyStorePass = keyStorePass;
-    }
-
-    public String getStaffURI() {
-        return staffURI;
-    }
-
-    public void setStaffURI(String staffURI) {
-        this.staffURI = staffURI;
-    }
-
-    public String getCrmURI() {
-        return crmURI;
-    }
-
-    public void setCrmURI(String crmURI) {
-        this.crmURI = crmURI;
-    }
-
-    public int getExpireTime() {
-        return expireTime;
-    }
-
-    public void setExpireTime(int expireTime) {
-        this.expireTime = expireTime;
     }
 
 }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import dev.wilix.crm.ldap.config.AppConfigurationProperties;
+import dev.wilix.crm.ldap.config.UserDataStorageConfigurationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,19 +32,19 @@ public class CrmUserDataStorage implements UserDataStorage {
     private final ObjectMapper objectMapper;
     private final Cache<String, Map<String, List<String>>> users;
 
-    private final String STAFF_URI;
-    private final String CRM_URI;
+    private final String userDirectAuthUri;
+    private final String appUserSearchUri;
 
     private static final List<String> SERVICE_NAMES = List.of("ldap-service");
 
-    public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, AppConfigurationProperties config) {
+    public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, UserDataStorageConfigurationProperties config) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         users = CacheBuilder.newBuilder()
-                .expireAfterAccess(config.getExpireTime(), TimeUnit.MINUTES)
+                .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
-        STAFF_URI = config.getStaffURI();
-        CRM_URI = config.getCrmURI();
+        userDirectAuthUri = config.getUserDirectAuthUri();
+        appUserSearchUri = config.getAppUserSearchUri();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class CrmUserDataStorage implements UserDataStorage {
 
     private URI buildRequestURItoCRM(String username) {
         return URI.create(
-                CRM_URI + String.format("?select=emailAddress" +
+                appUserSearchUri + String.format("?select=emailAddress" +
                         "&where[0][attribute]=userName" +
                         "&where[0][value]=%s" +
                         "&where[0][type]=equals", username)
@@ -131,7 +131,7 @@ public class CrmUserDataStorage implements UserDataStorage {
     private HttpRequest buildHttpRequestToStaff(String username, String password) {
         return HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(buildRequestBodyToStaff(username, password)))
-                .uri(URI.create(STAFF_URI))
+                .uri(URI.create(userDirectAuthUri))
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8")
                 .build();

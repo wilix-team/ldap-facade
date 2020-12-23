@@ -23,7 +23,7 @@ import java.security.GeneralSecurityException;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(AppConfigurationProperties.class)
+@EnableConfigurationProperties({AppConfigurationProperties.class, UserDataStorageConfigurationProperties.class})
 public class RootConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
@@ -52,10 +52,13 @@ public class RootConfig {
         return ldapListenerConfig;
     }
 
+    /**
+     * Подготовка конфигурации слушателя ldap содеинения для возможности принимать соединения по защищенному каналу.
+     */
     private void configureSSL(LDAPListenerConfig ldapListenerConfig) throws GeneralSecurityException {
-        String serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
-        KeyStoreKeyManager keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
-        final SSLUtil serverSSLUtil = new SSLUtil(keyManager, null);
+        var serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
+        var keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
+        var serverSSLUtil = new SSLUtil(keyManager, null);
 
         ldapListenerConfig.setServerSocketFactory(serverSSLUtil.createSSLServerSocketFactory("TLSv1.2"));
     }
@@ -66,7 +69,7 @@ public class RootConfig {
     }
 
     @Bean
-    public UserDataStorage userDataStorage() {
+    public UserDataStorage userDataStorage(UserDataStorageConfigurationProperties config) {
         return new CrmUserDataStorage(httpClient(), objectMapper(), config);
     }
 
@@ -74,7 +77,7 @@ public class RootConfig {
     public HttpClient httpClient() {
         return HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(10)) // TODO Возможно потребуется выносить в настройки.
                 .build();
     }
 

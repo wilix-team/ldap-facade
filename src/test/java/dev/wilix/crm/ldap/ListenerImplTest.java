@@ -10,6 +10,7 @@ import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
 import dev.wilix.crm.ldap.config.AppConfigurationProperties;
+import dev.wilix.crm.ldap.config.UserDataStorageConfigurationProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -33,6 +34,8 @@ public class ListenerImplTest {
 
     @Autowired
     AppConfigurationProperties config;
+    @Autowired
+    UserDataStorageConfigurationProperties userStorageConfig;
     @MockBean
     HttpClient httpClient;
     @Mock
@@ -134,7 +137,7 @@ public class ListenerImplTest {
 
     private URI buildRequestURI(String username) {
         return URI.create(
-                config.getCrmURI() + String.format("?select=emailAddress" +
+                userStorageConfig.getAppUserSearchUri() + String.format("?select=emailAddress" +
                         "&where[0][attribute]=userName" +
                         "&where[0][value]=%s" +
                         "&where[0][type]=equals", username)
