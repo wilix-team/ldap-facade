@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 public class UserDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
     private String userDirectAuthUri;
-    private String appUserSearchUri; // TODO  Переименовать в BaseUrl
+    private String baseUrl;
 
     public int getCacheExpirationMinutes() {
         return cacheExpirationMinutes;
@@ -26,11 +26,11 @@ public class UserDataStorageConfigurationProperties {
         this.userDirectAuthUri = userDirectAuthUri;
     }
 
-    public String getAppUserSearchUri() {
-        return appUserSearchUri;
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
-    public void setAppUserSearchUri(String appUserSearchUri) {
-        this.appUserSearchUri = appUserSearchUri;
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 }

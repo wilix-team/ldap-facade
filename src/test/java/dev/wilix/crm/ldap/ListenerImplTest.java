@@ -23,8 +23,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -41,9 +43,15 @@ public class ListenerImplTest {
     @Mock
     HttpResponse<String> response;
 
-    private final String BASE_DN = "ou=People,dc=wilix,dc=dev";
+    private final String SERVICE_BASE_DN = "ou=Services,dc=wilix,dc=ru";
+    private final String PEOPLE_BASE_DN = "ou=People,dc=wilix,dc=ru";
+
     private final String TEST_SERVICE = "ldap-service";
-    private final String TEST_PASS = "ldap-service-password";
+    private final String TEST_USER = "admin";
+    private final String TEST_PASS = "ldap-test-password";
+
+
+    private final String AUTH_URL = "/api/v1/App/user";
 
     @Test
     @Disabled("Нужно доработать тесты, моки и т.д.")
@@ -71,7 +79,7 @@ public class ListenerImplTest {
         boolean exception = false;
 
         try (LDAPConnection ldap = openLDAP()) {
-            performBind(ldap, "admin");
+            performBind(ldap, TEST_USER);
         } catch (LDAPException e) {
             exception = true;
         }
@@ -87,13 +95,26 @@ public class ListenerImplTest {
         SearchResult searchResult;
 
         try (LDAPConnection ldap = openLDAP()) {
-            bindResult = performBind(ldap, TEST_SERVICE);
+            bindResult = performBind(ldap, generateServiceBindDN(TEST_SERVICE), true);
 
-            searchResult = ldap.search(BASE_DN, SearchScope.SUB, generateFilter(TEST_SERVICE));
+            searchResult = ldap.search(PEOPLE_BASE_DN, SearchScope.SUB, generateFilter(TEST_SERVICE));
         }
 
         LDAPTestUtils.assertResultCodeEquals(bindResult, ResultCode.SUCCESS);
         LDAPTestUtils.assertResultCodeEquals(searchResult, ResultCode.SUCCESS);
+    }
+
+    @Test
+    public void userBindTest() throws LDAPException, IOException, InterruptedException {
+        setupSuccessResponse();
+
+        BindResult bindResult;
+
+        try (LDAPConnection ldap = openLDAP()) {
+            bindResult = performBind(ldap, generateUserBindDN(TEST_USER));
+        }
+
+        LDAPTestUtils.assertResultCodeEquals(bindResult, ResultCode.SUCCESS);
     }
 
     private LDAPConnection openLDAP() throws LDAPException {
@@ -101,17 +122,27 @@ public class ListenerImplTest {
     }
 
     private BindResult performBind(LDAPConnection ldap, String login) throws IOException, InterruptedException, LDAPException {
-        setupHttpClientForResponse(login);
+        return performBind(ldap, login, false);
+    }
+
+    private BindResult performBind(LDAPConnection ldap, String login, boolean isServiceRequest) throws IOException, InterruptedException, LDAPException {
+        setupHttpClientForResponse(isServiceRequest);
 
         return ldap.bind(login, TEST_PASS);
     }
 
     // MOCKS
 
-    private void setupHttpClientForResponse(String username) throws IOException, InterruptedException {
-        when(httpClient.send(
-                buildHttpRequest(username), HttpResponse.BodyHandlers.ofString()))
-                .thenReturn(response);
+    private void setupHttpClientForResponse(boolean isServiceRequest) throws IOException, InterruptedException {
+        if (isServiceRequest) {
+            when(httpClient.send(
+                    buildServiceHttpRequest(), HttpResponse.BodyHandlers.ofString()))
+                    .thenReturn(response);
+        } else {
+            when(httpClient.send(
+                    buildUserHttpRequest(), HttpResponse.BodyHandlers.ofString()))
+                    .thenReturn(response);
+        }
     }
 
     private void setupSuccessResponse() {
@@ -122,26 +153,41 @@ public class ListenerImplTest {
 
     // COMMON
 
+    private String generateServiceBindDN(String serviceName) {
+        return String.format("uid=%s,%s", serviceName, SERVICE_BASE_DN);
+    }
+
+    private String generateUserBindDN(String username) {
+        return String.format("uid=%s,%s", username, PEOPLE_BASE_DN);
+    }
+
     private String generateFilter(String loginPass) {
         return String.format("(uid=%s)", loginPass);
     }
 
-    public HttpRequest buildHttpRequest(String username) {
+    public HttpRequest buildServiceHttpRequest() {
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(buildRequestURI(username))
-                .setHeader("User", "ldap-service")
+                .uri(getRequestURI())
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", TEST_PASS)
                 .build();
     }
 
-    private URI buildRequestURI(String username) {
-        return URI.create(
-                userStorageConfig.getAppUserSearchUri() + String.format("?select=emailAddress" +
-                        "&where[0][attribute]=userName" +
-                        "&where[0][value]=%s" +
-                        "&where[0][type]=equals", username)
-        );
+    public HttpRequest buildUserHttpRequest() {
+        String base64Credentials = Base64.getEncoder().encodeToString((TEST_USER + ":" + TEST_PASS).getBytes(StandardCharsets.UTF_8));
+        return HttpRequest.newBuilder()
+                .GET()
+                .uri(getRequestURI())
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
+                .setHeader("AUTHORIZATION", "Basic " + base64Credentials)
+                .build();
+    }
+
+    private URI getRequestURI() {
+        return URI.create(userStorageConfig.getBaseUrl() + AUTH_URL);
     }
 
 }
