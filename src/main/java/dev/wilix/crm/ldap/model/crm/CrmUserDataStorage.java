@@ -1,11 +1,14 @@
-package dev.wilix.crm.ldap.model;
+package dev.wilix.crm.ldap.model.crm;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import dev.wilix.crm.ldap.config.UserDataStorageConfigurationProperties;
+import com.google.common.net.HttpHeaders;
+import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.crm.ldap.model.Authentication;
+import dev.wilix.crm.ldap.model.UserDataStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,9 +17,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -35,7 +37,8 @@ public class CrmUserDataStorage implements UserDataStorage {
     private final String userDirectAuthUri;
     private final String appUserSearchUri;
 
-    private static final List<String> SERVICE_NAMES = List.of("ldap-service");
+    // TODO Переделать на App/user !!!
+    private final String searchUserUriTemplate;
 
     public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, UserDataStorageConfigurationProperties config) {
         this.httpClient = httpClient;
@@ -45,15 +48,153 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .build();
         userDirectAuthUri = config.getUserDirectAuthUri();
         appUserSearchUri = config.getAppUserSearchUri();
+
+        searchUserUriTemplate = appUserSearchUri + "/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=%s&where[0][type]=equals";
     }
 
     @Override
-    public boolean authenticate(String username, String password) throws IOException, InterruptedException {
-        if (SERVICE_NAMES.contains(username)) {
-            return getServiceInfo(username, password);
-        } else {
-            return getInfoByRequestToStaff(username, password);
+    public Authentication authenticateUser(String userName, String password) {
+        try {
+            // На текущий момент просто запрашиваем информацию о пользователе.
+            // TODO Перейти на App/user
+            Map<String, List<String>> userInfo = searchUserWithUserOwnCredentials(userName, password);
+            users.put(userName, userInfo);
+
+            UserAuthentication auth = new UserAuthentication();
+            auth.setSuccess(true);
+            auth.setUserName(userName);
+            auth.setPassword(password);
+
+            return auth;
+        } catch (Exception ex) {
+            // TODO log
+            return Authentication.NEGATIVE;
         }
+    }
+
+    @Override
+    public Authentication authenticateService(String serviceName, String token) {
+        try {
+            // На текущий момент просто запрашиваем информацию о пользователе.
+            // FIXME Это костыль и нужен другой способ проверки проверки аутентификации сервиса.
+            // TODO Перейти на App/user
+            Map<String, List<String>> userInfo = searchUserWithApiTokenCredentials(serviceName, token);
+
+            ServiceAuthentication auth = new ServiceAuthentication();
+            auth.setSuccess(true);
+            auth.setServiceName(serviceName);
+            auth.setToken(token);
+
+            return auth;
+
+        } catch (Exception ex) {
+            // TODO log
+            return Authentication.NEGATIVE;
+        }
+    }
+
+    private Map<String, List<String>> searchUserWithUserOwnCredentials(String userName, String password) {
+        HttpRequest.Builder requestBuilder = prepareBaseUserInfoRequest(userName);
+
+        String encoding = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
+        requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + encoding);
+
+        return requestUserInfo(requestBuilder.build());
+    }
+
+    private Map<String, List<String>> searchUserWithApiTokenCredentials(String userName, String token) {
+        HttpRequest.Builder requestBuilder = prepareBaseUserInfoRequest(userName);
+
+        requestBuilder.setHeader("X-Api-Key", token);
+
+        return requestUserInfo(requestBuilder.build());
+    }
+
+    private HttpRequest.Builder prepareBaseUserInfoRequest(String userName) {
+        return HttpRequest.newBuilder()
+                .GET()
+                .uri(buildRequestURItoCRM(userName))
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8");
+    }
+
+    private Map<String, List<String>> requestUserInfo(HttpRequest request) {
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException ex) {
+            throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
+        }
+
+        LOG.debug("Receive response from CRM: {}", response);
+
+        if (response.statusCode() == 401 || response.statusCode() == 403) {
+            // TODO log incorrect credentials
+            throw new IllegalStateException("Incorrect credentials or access rights!");
+        }
+
+        if (response.statusCode() != 200) {
+            LOG.warn("For request {} receive bad response from CRM {}", request, response);
+            throw new IllegalStateException("Get bad request from CRM!");
+        }
+
+        try {
+            return parseUserInfoFromRegularCrmRequest(response.body());
+        } catch (Exception e) {
+            LOG.warn("Cant save {} info {}", request, response.body());
+            throw new IllegalStateException("Can't properly parse CRM response.");
+        }
+    }
+
+    private Map<String, List<String>> parseUserInfoFromRegularCrmRequest(String body) throws JsonProcessingException {
+        JsonNode responseNode = objectMapper.readTree(body);
+
+        // TODO Переделать эту систему.
+
+        //STAFF request
+        JsonNode userJsonField = responseNode.get("user");
+
+        //CRM request
+        if (userJsonField == null) {
+            userJsonField = responseNode.get("list").get(0);
+        }
+
+        return parseUserInfoInCrmFormatFromJsonNode(userJsonField);
+    }
+
+    /**
+     * Парсинг пользователя из формата ответа от CRM.
+     * @param userJsonField Json поле с информацией о пользователе.
+     * @return Разобранная информация о пользователе в ожидаемом формате.
+     */
+    private Map<String, List<String>> parseUserInfoInCrmFormatFromJsonNode(JsonNode userJsonField) {
+        Map<String, List<String>> info = new HashMap<>();
+
+        if (userJsonField != null) {
+            // Приемник для корректной установки свойств пользователя из ответа сервера в свойства пользователя для ldap.
+            BiConsumer<String, Consumer<String>> jsonToUserFieldSetter = (fieldName, fieldSetter) -> {
+                JsonNode fieldNode = userJsonField.get(fieldName);
+                if (fieldNode != null) {
+                    fieldSetter.accept(fieldNode.asText());
+                }
+            };
+
+            info.put("company", List.of("WILIX"));
+
+            jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
+            jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
+            jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
+
+            // атрибут для имени в vcs системах (git)
+            List<String> vcsName = new ArrayList<>(2);
+            jsonToUserFieldSetter.accept("name", vcsName::add);
+            jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
+            info.put("vcsName", vcsName);
+
+            // TODO Группы!!!
+        }
+
+        return info;
     }
 
     private boolean getServiceInfo(String username, String password) throws IOException, InterruptedException {
@@ -78,18 +219,14 @@ public class CrmUserDataStorage implements UserDataStorage {
         return HttpRequest.newBuilder()
                 .GET()
                 .uri(buildRequestURItoCRM(username))
-                .setHeader("User", "ldap-service")
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", bindPassword)
                 .build();
     }
 
-    private URI buildRequestURItoCRM(String username) {
-        return URI.create(
-                appUserSearchUri + String.format("?select=emailAddress" +
-                        "&where[0][attribute]=userName" +
-                        "&where[0][value]=%s" +
-                        "&where[0][type]=equals", username)
-        );
+    private URI buildRequestURItoCRM(String userName) {
+        return URI.create(String.format(searchUserUriTemplate, userName));
     }
 
     private boolean sendRequestAndSaveInfo(HttpRequest crmRequest, String username) throws IOException, InterruptedException {
@@ -211,13 +348,13 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     @Override
-    public Map<String, List<String>> getInfo(String username, String bindUser, String bindPassword) throws IOException, InterruptedException {
+    public Map<String, List<String>> getInfo(String username, Authentication authentication) {
         var info = users.getIfPresent(username);
 
-        if (info == null && SERVICE_NAMES.contains(bindUser)) {
-            getInfoByRequestToCRM(username, bindPassword);
-            info = users.getIfPresent(username);
-        }
+//        if (info == null && SERVICE_NAMES.contains(bindUser)) {
+//            getInfoByRequestToCRM(username, bindPassword);
+//            info = users.getIfPresent(username);
+//        }
 
         return info;
     }

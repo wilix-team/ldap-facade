@@ -11,23 +11,27 @@ public interface UserDataStorage {
 
     /**
      * Прямая аутентификация пользователя.
-     * @param username Имя пользователя.
+     * @param userName Имя пользователя.
      * @param password Пароль пользователя.
      * @return Признак успешного входа пользователя.
-     * @throws IOException
-     * @throws InterruptedException
      */
-    boolean authenticate(String username, String password) throws IOException, InterruptedException;
+    Authentication authenticateUser(String userName, String password);
 
     /**
-     *
-     * @param username
-     * @param bindUser
-     * @param bindPassword
+     * Аутентификация сервисного аккаунта.
+     * @param serviceName
+     * @param token
      * @return
-     * @throws IOException
-     * @throws InterruptedException
      */
-    Map<String, List<String>> getInfo(String username, String bindUser, String bindPassword) throws IOException, InterruptedException;
+    Authentication authenticateService(String serviceName, String token);
+
+    /**
+     * Получение информации о пользователе.
+     *
+     * @param userName Логин пользователя, о котором требуется получить информацию.
+     * @param authentication Информация о текущей аутентификации.
+     * @return
+     */
+    Map<String, List<String>> getInfo(String userName, Authentication authentication);
 
 }

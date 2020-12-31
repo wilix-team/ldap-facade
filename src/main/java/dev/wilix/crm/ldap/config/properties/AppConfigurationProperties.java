@@ -1,4 +1,4 @@
-package dev.wilix.crm.ldap.config;
+package dev.wilix.crm.ldap.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

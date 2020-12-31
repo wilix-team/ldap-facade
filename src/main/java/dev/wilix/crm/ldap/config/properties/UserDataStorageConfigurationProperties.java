@@ -1,4 +1,4 @@
-package dev.wilix.crm.ldap.config;
+package dev.wilix.crm.ldap.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 public class UserDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
     private String userDirectAuthUri;
-    private String appUserSearchUri;
+    private String appUserSearchUri; // TODO  Переименовать в BaseUrl
 
     public int getCacheExpirationMinutes() {
         return cacheExpirationMinutes;
