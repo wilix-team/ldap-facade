@@ -7,7 +7,9 @@ import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
 import com.unboundid.util.ssl.KeyStoreKeyManager;
 import com.unboundid.util.ssl.SSLUtil;
 import dev.wilix.crm.ldap.Application;
-import dev.wilix.crm.ldap.model.CrmUserDataStorage;
+import dev.wilix.crm.ldap.config.properties.AppConfigurationProperties;
+import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.crm.ldap.model.crm.CrmUserDataStorage;
 import dev.wilix.crm.ldap.model.UserBindAndSearchRequestHandler;
 import dev.wilix.crm.ldap.model.UserDataStorage;
 import org.slf4j.Logger;
@@ -23,7 +25,7 @@ import java.security.GeneralSecurityException;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(AppConfigurationProperties.class)
+@EnableConfigurationProperties({AppConfigurationProperties.class, UserDataStorageConfigurationProperties.class})
 public class RootConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
@@ -41,21 +43,26 @@ public class RootConfig {
 
         LDAPListenerConfig ldapListenerConfig = new LDAPListenerConfig(config.getPort(), requestHandler);
 
-        // TODO Нужно сделать это настройкой.
         if (config.isSslEnabled()) {
             LOG.info("SSL is turned on. Configuring...");
 
-            String serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
-            KeyStoreKeyManager keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
-            final SSLUtil serverSSLUtil = new SSLUtil(keyManager, null);
-
-            ldapListenerConfig.setServerSocketFactory(serverSSLUtil.createSSLServerSocketFactory("TLSv1.2"));
+            configureSSL(ldapListenerConfig);
         } else {
             LOG.info("SSL is turned off...");
         }
 
-
         return ldapListenerConfig;
+    }
+
+    /**
+     * Подготовка конфигурации слушателя ldap содеинения для возможности принимать соединения по защищенному каналу.
+     */
+    private void configureSSL(LDAPListenerConfig ldapListenerConfig) throws GeneralSecurityException {
+        var serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();
+        var keyManager = new KeyStoreKeyManager(serverKeyStorePath, config.getKeyStorePass().toCharArray());
+        var serverSSLUtil = new SSLUtil(keyManager, null);
+
+        ldapListenerConfig.setServerSocketFactory(serverSSLUtil.createSSLServerSocketFactory("TLSv1.2"));
     }
 
     @Bean
@@ -64,15 +71,15 @@ public class RootConfig {
     }
 
     @Bean
-    public UserDataStorage userDataStorage() {
-        return new CrmUserDataStorage(httpClient(), objectMapper());
+    public UserDataStorage userDataStorage(UserDataStorageConfigurationProperties config) {
+        return new CrmUserDataStorage(httpClient(), objectMapper(), config);
     }
 
     @Bean
     public HttpClient httpClient() {
         return HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(10)) // TODO Возможно потребуется выносить в настройки.
                 .build();
     }
 

@@ -1,59 +1,42 @@
 package dev.wilix.crm.ldap.model;
 
-import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.listener.LDAPListenerClientConnection;
 import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
-import com.unboundid.ldap.protocol.BindRequestProtocolOp;
-import com.unboundid.ldap.protocol.BindResponseProtocolOp;
-import com.unboundid.ldap.protocol.LDAPMessage;
-import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
-import com.unboundid.ldap.protocol.SearchResultDoneProtocolOp;
-import com.unboundid.ldap.sdk.Control;
-import com.unboundid.ldap.sdk.DN;
-import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.RDN;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.protocol.*;
+import com.unboundid.ldap.sdk.*;
+import com.unboundid.ldap.sdk.controls.AuthorizationIdentityResponseControl;
 import com.unboundid.util.Debug;
 import com.unboundid.util.StaticUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * TODO Сделать настройкой базовый путь для директории пользователей.
- */
 public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserBindAndSearchRequestHandler.class);
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=dev");
+    // TODO Сделать все это настройками.
+    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=people,dc=wilix,dc=dev");
+    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=services,dc=wilix,dc=dev");
     private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+?)\\)");
-    private static final DN BASE_DN = new DN(
-            new RDN("ou", "People"),
-            new RDN("dc", "wilix"),
-            new RDN("dc", "dev")
-    );
+
+    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=people,dc=wilix,dc=dev";
 
     private final LDAPListenerClientConnection connection;
 
     private final UserDataStorage userStorage;
 
-    private String bindedUserName;
-    private String bindDn;
+    private Authentication authentication;
+
 
     /**
      * Для первичного создания обработчика.
@@ -81,7 +64,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         LOG.info("Receive bind request: {}", request);
 
         if (request.getCredentialsType() != BindRequestProtocolOp.CRED_TYPE_SIMPLE) {
-            LOG.warn("Not simple request {}", request);
+            LOG.warn("Not a simple request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
                     "Server supports only simple credentials.",
@@ -96,34 +79,25 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        final String userName;
+        // Определение типа клиента (отдельный пользователь или сервис), поиск имени пользователя и выбор способа аутентификации.
+        Function<String, Authentication> authenticator;
         try {
-            String bindDN = request.getBindDN();
-
-            LOG.debug("Bind DN before concat {}", bindDN);
-
-            // TODO Создано из-за некоторых особенностей работы openVPN
-            if (!request.getBindDN().contains("uid")) {
-                bindDN = "uid=" + bindDN;
-            }
-
-            DN dn = new DN(concatRequestRDNsWithBase(bindDN));
-            LOG.debug("Bind DN after concat {}", dn);
-            userName = extractUserNameFromDN(dn.toMinimallyEncodedString());
-
-            if (userName == null || userName.isBlank()) {
-                LOG.warn("No username in request {}", request);
-                throw new IllegalArgumentException();
+            if (isServiceBind(request)) {
+                authenticator = password -> userStorage.authenticateService(extractServiceName(request), password);
+            } else if (isUserBind(request)) {
+                authenticator = password -> userStorage.authenticateUser(extractUserName(request), password);
+            } else {
+                throw new IllegalStateException("Unknown bind DN format");
             }
         } catch (Exception e) {
+            LOG.warn("There is a problem with DN: {} for request: {}", e, request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_DN_SYNTAX_INT_VALUE, null,
-                    "There is not correct user DN.",
+                    "Not expected DN format",
                     null, null));
         }
 
-        final ASN1OctetString bindPassword = request.getSimplePassword();
-        final String password = bindPassword.stringValue();
+        final String password = request.getSimplePassword().stringValue();
 
         if (StringUtils.isBlank(password)) {
             LOG.warn("Blank password in request {}", request);
@@ -133,18 +107,18 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        boolean authResult;
+        Authentication authResult;
         try {
-            authResult = userStorage.authenticate(userName, password);
-        } catch (IOException | InterruptedException e) {
-            LOG.error("Errors occured when requesting CRM", e);
+            authResult = authenticator.apply(password);
+        } catch (Exception e) {
+            LOG.error("Errors occurred when authenticating", e);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.CONNECT_ERROR_INT_VALUE, request.getBindDN(),
-                    String.format("CRM request Error: %s", e.getMessage()),
+                    String.format("Error in CRM request: %s", e.getMessage()),
                     null, null));
         }
 
-        if (!authResult) {
+        if ( ! authResult.isSuccess()) {
             LOG.warn("Bad auth result from CRM for request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
@@ -152,24 +126,54 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        final ArrayList<Control> responseControls = new ArrayList<>(1);
+        LOG.info("There was a successful authentication {}.", authResult);
 
-        LOG.info("User {} binded successfully.", userName);
-
-        bindedUserName = userName;
-        bindDn = request.getBindDN();
+        // Как правило первой в соединении происходит аутентификация сервиса с токеном, а затем пользоватеелей.
+        // Поэтому присваивается только результат первой аутентификации.
+        if (this.authentication == null) {
+            this.authentication = authResult;
+        }
 
         return new LDAPMessage(messageID,
                 new BindResponseProtocolOp(ResultCode.SUCCESS_INT_VALUE, null,
                         null, null, null),
-                responseControls);
+                List.of(new AuthorizationIdentityResponseControl("")));
     }
 
-    private RDN[] concatRequestRDNsWithBase(String bindDN) throws LDAPException {
-        return Arrays.stream(ArrayUtils.addAll(
-                DN.getRDNs(bindDN),
-                BASE_DN.getRDNs()
-        )).distinct().toArray(RDN[]::new);
+    private boolean isServiceBind(BindRequestProtocolOp request) {
+        return DN_TO_SERVICENAME_PATTERN.matcher(request.getBindDN()).matches();
+    }
+
+    private boolean isUserBind(BindRequestProtocolOp request) {
+        return DN_TO_USERNAME_PATTERN.matcher(request.getBindDN()).matches();
+    }
+
+    private String extractServiceName(BindRequestProtocolOp request) {
+        String serviceName = null;
+        Matcher matcher = DN_TO_SERVICENAME_PATTERN.matcher(request.getBindDN());
+        if (matcher.matches()) {
+            serviceName = matcher.group(1);
+        }
+
+        if (serviceName == null || serviceName.isBlank()) {
+            throw new IllegalArgumentException("No service name in request");
+        }
+
+        return serviceName;
+    }
+
+    private String extractUserName(BindRequestProtocolOp request) {
+        String userName = null;
+        Matcher matcher = DN_TO_USERNAME_PATTERN.matcher(request.getBindDN());
+        if (matcher.matches()) {
+            userName = matcher.group(1);
+        }
+
+        if (userName == null || userName.isBlank()) {
+            throw new IllegalArgumentException("No user name in request");
+        }
+
+        return userName;
     }
 
     @Override
@@ -177,8 +181,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         LOG.info("Receive search request: {}", request);
 
         // Вытаскиваем имя пользователя из фильтра для поиска.
-        String userNameFromFilter = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
-        if (userNameFromFilter == null) {
+        String userName = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
+        if (userName == null || userName.isBlank()) {
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE, null,
                     "No username in filter!",
@@ -186,22 +190,31 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         // Поиск атрибутов пользователя.
-        Map<String, List<String>> userInfo = userStorage.getUserInfo(userNameFromFilter);
-        if (userInfo == null || userInfo.isEmpty()) {
+        Map<String, List<String>> info;
+        try {
+            info = userStorage.getInfo(userName, authentication);
+
+            if (info == null || info.isEmpty()) {
+                throw new IllegalStateException("No info for " + userName);
+            }
+        } catch (Exception e) {
+            LOG.warn("There is problem with searching user info.", e);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.NO_SUCH_OBJECT_INT_VALUE, null,
-                    "User not found!",
+                    "User info not found!",
                     null, null));
         }
 
         // Подготовка ответа в формате ldap.
-        Entry entry = new Entry(userNameFromFilter);
+        Entry entry = new Entry(userName);
         for (String requestedAttributeName : request.getAttributes()) {
-            final List<String> attributeValues = userInfo
+            final List<String> attributeValues = info
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
-//            entry.addAttribute("memberOf", "tech-director", "admin", "good-person");
         }
+
+        // TODO Сделать более безопасным.
+        entry.setDN(String.format(USER_DN_FROM_LOGIN_TEMPLATE, userName));
 
         // Отправка информации о пользователе.
         SearchResultEntry resultEntry = new SearchResultEntry(entry);
@@ -216,17 +229,12 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     le.getResponseControls());
         }
 
-        LOG.info("Search op finished successfully with result {}", resultEntry);
-
         // Успешное завершение операции.
+        LOG.info("Search operation finished successfully with result {}", resultEntry);
         return new LDAPMessage(messageID,
                 new SearchResultDoneProtocolOp(ResultCode.SUCCESS_INT_VALUE, null,
                         null, null),
                 Collections.emptyList());
-    }
-
-    private String extractUserNameFromDN(String bindDN) {
-        return regExpFindFirstGroup(DN_TO_USERNAME_PATTERN, bindDN);
     }
 
     private String extractUserNameFromSearchFilter(String bindDN) {
