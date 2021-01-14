@@ -164,7 +164,7 @@ public class CrmUserDataStorage implements UserDataStorage {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        LOG.debug("Receive response from CRM: {}", response);
+        LOG.debug("Receive response from CRM: {}", response.body());
 
         if (response.statusCode() == 401 || response.statusCode() == 403) {
             LOG.warn("For request {} received UNAUTHORIZED response", request);

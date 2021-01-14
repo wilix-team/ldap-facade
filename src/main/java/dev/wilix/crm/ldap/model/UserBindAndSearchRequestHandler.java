@@ -25,11 +25,11 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // TODO Сделать все это настройками.
-    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=people,dc=wilix,dc=dev");
-    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=services,dc=wilix,dc=dev");
+    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=ru");
+    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=Services,dc=wilix,dc=ru");
     private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+?)\\)");
 
-    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=people,dc=wilix,dc=dev";
+    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=People,dc=wilix,dc=ru";
 
     private final LDAPListenerClientConnection connection;
 
@@ -183,10 +183,10 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         // Вытаскиваем имя пользователя из фильтра для поиска.
         String userName = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
         if (userName == null || userName.isBlank()) {
-            return new LDAPMessage(messageID, new BindResponseProtocolOp(
+            return new LDAPMessage(messageID, new SearchResultDoneProtocolOp(
                     ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE, null,
                     "No username in filter!",
-                    null, null));
+                    null));
         }
 
         // Поиск атрибутов пользователя.
@@ -199,10 +199,10 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
             }
         } catch (Exception e) {
             LOG.warn("There is problem with searching user info.", e);
-            return new LDAPMessage(messageID, new BindResponseProtocolOp(
+            return new LDAPMessage(messageID, new SearchResultDoneProtocolOp(
                     ResultCode.NO_SUCH_OBJECT_INT_VALUE, null,
                     "User info not found!",
-                    null, null));
+                    null));
         }
 
         // Подготовка ответа в формате ldap.
