@@ -1,18 +1,9 @@
 package dev.wilix.crm.ldap.model;
 
-import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.listener.LDAPListenerClientConnection;
 import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
-import com.unboundid.ldap.protocol.BindRequestProtocolOp;
-import com.unboundid.ldap.protocol.BindResponseProtocolOp;
-import com.unboundid.ldap.protocol.LDAPMessage;
-import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
-import com.unboundid.ldap.protocol.SearchResultDoneProtocolOp;
-import com.unboundid.ldap.sdk.Control;
-import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.protocol.*;
+import com.unboundid.ldap.sdk.*;
 import com.unboundid.ldap.sdk.controls.AuthorizationIdentityResponseControl;
 import com.unboundid.util.Debug;
 import com.unboundid.util.StaticUtils;
@@ -20,8 +11,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.naming.AuthenticationNotSupportedException;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +24,12 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=ru");
-    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=Services,dc=wilix,dc=ru");
+    // TODO Сделать все это настройками.
+    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=people,dc=wilix,dc=dev");
+    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=services,dc=wilix,dc=dev");
     private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+?)\\)");
+
+    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=people,dc=wilix,dc=dev";
 
     private final LDAPListenerClientConnection connection;
 
@@ -213,8 +205,6 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-
-
         // Подготовка ответа в формате ldap.
         Entry entry = new Entry(userName);
         for (String requestedAttributeName : request.getAttributes()) {
@@ -222,6 +212,9 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
+
+        // TODO Сделать более безопасным.
+        entry.setDN(String.format(USER_DN_FROM_LOGIN_TEMPLATE, userName));
 
         // Отправка информации о пользователе.
         SearchResultEntry resultEntry = new SearchResultEntry(entry);

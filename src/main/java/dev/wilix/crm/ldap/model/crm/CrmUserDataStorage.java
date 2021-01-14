@@ -1,6 +1,5 @@
 package dev.wilix.crm.ldap.model.crm;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Хранилище пользователей, построенное на основе Wilix CRM.
@@ -38,9 +38,6 @@ public class CrmUserDataStorage implements UserDataStorage {
     private final ObjectMapper objectMapper;
     private final Cache<String, Map<String, List<String>>> users;
 
-    private final String userDirectAuthUri;
-    private final String baseUrl;
-
     private final String searchUserUriTemplate;
     private final String authenticateUserUri;
 
@@ -50,22 +47,20 @@ public class CrmUserDataStorage implements UserDataStorage {
         users = CacheBuilder.newBuilder()
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
-        userDirectAuthUri = config.getUserDirectAuthUri();
-        baseUrl = config.getBaseUrl();
 
-        searchUserUriTemplate = baseUrl + "/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=%s&where[0][type]=equals";
-        authenticateUserUri = baseUrl + "/api/v1/App/user";
+        // TODO делать безопасное формирование с учетом граничных условий.
+        searchUserUriTemplate = config.getBaseUrl() + "/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=%s&where[0][type]=equals";
+        authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
     @Override
     public Authentication authenticateUser(String userName, String password) {
         try {
-            // На текущий момент просто запрашиваем информацию о пользователе.
-            UserAuthentication auth = new UserAuthentication();
+            Map<String, List<String>> userInfo = authenticateWithUserCredentials(userName, password);
 
-            Map<String, List<String>> userInfo = authenticateWithCredentials(userName, password, auth);
             users.put(userName, userInfo);
 
+            UserAuthentication auth = new UserAuthentication();
             auth.setSuccess(true);
             auth.setUserName(userName);
             auth.setPassword(password);
@@ -80,47 +75,88 @@ public class CrmUserDataStorage implements UserDataStorage {
     @Override
     public Authentication authenticateService(String serviceName, String token) {
         try {
-            // На текущий момент просто запрашиваем информацию о пользователе.
-            // FIXME Это костыль и нужен другой способ проверки проверки аутентификации сервиса.
-            ServiceAuthentication auth = new ServiceAuthentication();
+            Map<String, List<String>> userInfo = authenticateWithServiceToken(serviceName, token);
 
-            Map<String, List<String>> userInfo = authenticateWithCredentials(serviceName, token, auth);
             users.put(serviceName, userInfo);
 
+            ServiceAuthentication auth = new ServiceAuthentication();
             auth.setSuccess(true);
             auth.setServiceName(serviceName);
             auth.setToken(token);
 
             return auth;
-
         } catch (Exception ex) {
             LOG.debug("Wrong service credentials: {}:{}", serviceName, token);
             return Authentication.NEGATIVE;
         }
     }
 
-    private Map<String, List<String>> authenticateWithCredentials(String userName, String confirmation, Authentication auth) {
-        HttpRequest.Builder requestBuilder = prepareAuthenticateRequest();
+    @Override
+    public Map<String, List<String>> getInfo(String username, Authentication authentication) {
+        var info = users.getIfPresent(username);
 
-        if (auth instanceof ServiceAuthentication) {
-            requestBuilder.setHeader("X-Api-Key", confirmation);
-        } else {
-            String base64Credentials = Base64.getEncoder().encodeToString((userName + ":" + confirmation).getBytes(StandardCharsets.UTF_8));
-            requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
+        if (info == null) {
+            if (authentication instanceof ServiceAuthentication) {
+                info = searchUser(username, authentication);
+            }
+
+            if (info != null && !info.isEmpty()) {
+                users.put(username, info);
+            }
         }
 
-        return requestUserInfo(requestBuilder.build());
+        return info;
+    }
+
+    private Map<String, List<String>> authenticateWithUserCredentials(String userName, String password) {
+        HttpRequest.Builder requestBuilder = prepareAuthenticateRequest();
+
+        final String base64Credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
+        requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
+
+        return requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
+    }
+
+    private Map<String, List<String>> authenticateWithServiceToken(String serviceName, String apiKey) {
+        HttpRequest.Builder requestBuilder = prepareAuthenticateRequest();
+
+        requestBuilder.setHeader("X-Api-Key", apiKey);
+
+        return requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
     }
 
     private HttpRequest.Builder prepareAuthenticateRequest() {
+        return prepareBasicCrmRequest(authenticateUserUri);
+    }
+
+    private Map<String, List<String>> searchUser(String userName, Authentication authentication) {
+        if (authentication instanceof ServiceAuthentication) {
+            HttpRequest.Builder request = prepareUserSearchRequest(userName);
+
+            String token = ((ServiceAuthentication) authentication).getToken();
+            request.setHeader("X-Api-Key", token);
+
+            return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
+        }
+
+        // TODO
+        throw new IllegalStateException("Can't search user info with non ServiceAccount.");
+    }
+
+    private HttpRequest.Builder prepareUserSearchRequest(String userName) {
+        return prepareBasicCrmRequest(
+                String.format(searchUserUriTemplate, userName));
+    }
+
+    private HttpRequest.Builder prepareBasicCrmRequest(String requestUri) {
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create(authenticateUserUri))
+                .uri(URI.create(requestUri))
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8");
     }
 
-    private Map<String, List<String>> requestUserInfo(HttpRequest request) {
+    private Map<String, List<String>> requestUserInfo(HttpRequest request, Function<JsonNode, JsonNode> userNodeExtractor) {
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -144,29 +180,13 @@ public class CrmUserDataStorage implements UserDataStorage {
             String responseBody = response.body();
 
             JsonNode responseJsonNode = objectMapper.readTree(responseBody);
-            JsonNode userJson = getUserJsonNode(responseJsonNode);
+            JsonNode userJson = userNodeExtractor.apply(responseJsonNode);
 
             return parseUserInfoInCrmFormatFromJsonNode(userJson);
         } catch (Exception e) {
             LOG.warn("Cant save {} info {}", request, response.body());
             throw new IllegalStateException("Can't properly parse CRM response.");
         }
-    }
-
-    private JsonNode getUserJsonNode(JsonNode responseNode) {
-        // При авторизации по пути App/user информация о пользователе будет лежать по этому пути.
-        JsonNode userJson = responseNode.get("user");
-
-        // Если происходит поиск среди всех пользователей (сервисный аккаунт), то результаты поиска будут лежать по другому пути.
-        if (userJson == null) {
-            userJson = responseNode.get("list").get(0);
-        }
-
-        if (userJson == null) {
-            throw new IllegalArgumentException("Json node can't be null.");
-        }
-
-        return userJson;
     }
 
     /**
@@ -200,88 +220,6 @@ public class CrmUserDataStorage implements UserDataStorage {
             info.put("vcsName", vcsName);
 
             // TODO Группы!!!
-        }
-
-        return info;
-    }
-
-    private Map<String, List<String>> searchUser(String username, Authentication authentication) {
-        if (authentication instanceof ServiceAuthentication) {
-            String token = ((ServiceAuthentication) authentication).getToken();
-
-            try {
-                return getInfoByRequestToCRM(username, token);
-            } catch (IOException | InterruptedException e) {
-                LOG.warn("Can't get user info for {} by service", username);
-            }
-
-        }
-
-        return null;
-    }
-
-    private Map<String, List<String>> getInfoByRequestToCRM(String username, String bindPassword) throws IOException, InterruptedException {
-        HttpRequest request = buildHttpRequestToCRM(username, bindPassword);
-
-        LOG.info("Send authentication request to CRM for {}", username);
-
-        return requestUserInfoFromCRM(request, username);
-    }
-
-    private HttpRequest buildHttpRequestToCRM(String username, String bindPassword) {
-        return HttpRequest.newBuilder()
-                .GET()
-                .uri(buildRequestURItoCRM(username))
-                .setHeader("User-Agent", "ldap-facade")
-                .setHeader("Content-Type", "application/json; charset=utf-8")
-                .setHeader("X-Api-Key", bindPassword)
-                .build();
-    }
-
-    private URI buildRequestURItoCRM(String userName) {
-        return URI.create(String.format(searchUserUriTemplate, userName));
-    }
-
-    private Map<String, List<String>> requestUserInfoFromCRM(HttpRequest crmRequest, String username) throws IOException, InterruptedException {
-        HttpResponse<String> response = httpClient.send(crmRequest, HttpResponse.BodyHandlers.ofString());
-
-        LOG.info("Receive response from CRM: {}", response);
-
-        if (response.statusCode() != 200) {
-            LOG.warn("For username {} receive bad response from CRM {}", username, response);
-            return null;
-        }
-
-        try {
-            return parseUserInfo(response.body());
-        } catch (Exception e) {
-            LOG.warn("Cant save {} info {}", username, response.body());
-            return null;
-        }
-    }
-
-    private Map<String, List<String>> parseUserInfo(String responseBody) throws JsonProcessingException {
-        JsonNode responseJsonNode = objectMapper.readTree(responseBody);
-        JsonNode userJson = getUserJsonNode(responseJsonNode);
-
-        Map<String, List<String>> info = parseUserInfoInCrmFormatFromJsonNode(userJson);
-        LOG.info("Successfully parse info: {}", info);
-
-        return info;
-    }
-
-    @Override
-    public Map<String, List<String>> getInfo(String username, Authentication authentication) {
-        var info = users.getIfPresent(username);
-
-        if (info == null) {
-            if (authentication instanceof ServiceAuthentication) {
-                info = searchUser(username, authentication);
-            }
-
-            if (info != null && !info.isEmpty()) {
-                users.put(username, info);
-            }
         }
 
         return info;
