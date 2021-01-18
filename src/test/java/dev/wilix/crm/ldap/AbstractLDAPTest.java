@@ -38,8 +38,8 @@ public abstract class AbstractLDAPTest {
     @Mock
     HttpResponse<String> response;
 
-    private final String SERVICE_BASE_DN = "ou=Services,dc=wilix,dc=ru";
-    private final String PEOPLE_BASE_DN = "ou=People,dc=wilix,dc=ru";
+    private final String SERVICE_BASE_DN = "ou=services,dc=wilix,dc=dev";
+    private final String PEOPLE_BASE_DN = "ou=people,dc=wilix,dc=dev";
 
     protected final String TEST_SERVICE = "ldap-service";
     protected final String TEST_USER = "admin";

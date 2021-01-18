@@ -25,11 +25,11 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // TODO Сделать все это настройками.
-    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=People,dc=wilix,dc=ru");
-    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=Services,dc=wilix,dc=ru");
+    private static final Pattern DN_TO_USERNAME_PATTERN = Pattern.compile("uid=(.*),ou=people,dc=wilix,dc=dev");
+    private static final Pattern DN_TO_SERVICENAME_PATTERN = Pattern.compile("uid=(.*),ou=services,dc=wilix,dc=dev");
     private static final Pattern SEARCH_FILTER_TO_USERNAME_PATTERN = Pattern.compile("\\(uid=(.+?)\\)");
 
-    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=People,dc=wilix,dc=ru";
+    private static final String USER_DN_FROM_LOGIN_TEMPLATE = "uid=%s,ou=people,dc=wilix,dc=dev";
 
     private final LDAPListenerClientConnection connection;
 
