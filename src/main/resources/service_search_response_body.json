@@ -1,0 +1,16 @@
+{
+  "total": 1,
+  "list": [
+    {
+      "id": "5f7ad9914f960a46f",
+      "name": "LDAP Admin",
+      "userName": "admin",
+      "isActive": true,
+      "emailAddress": "admin@wilix.org",
+      "teamsNames": {
+        "5e313fd16823e49a8": "Employee",
+        "5e313fd23e49a8168": "Students"
+      }
+    }
+  ]
+}
