@@ -4,7 +4,7 @@
     {
       "id": "5f7ad9914f960a46f",
       "name": "LDAP Admin",
-      "userName": "admin",
+      "userName": "adminWithTeams",
       "isActive": true,
       "emailAddress": "admin@wilix.org",
       "teamsNames": {
