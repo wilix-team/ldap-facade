@@ -49,7 +49,11 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .build();
 
         // TODO делать безопасное формирование с учетом граничных условий.
-        searchUserUriTemplate = config.getBaseUrl() + "/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=%s&where[0][type]=equals";
+        searchUserUriTemplate = config.getBaseUrl() + "/api/v1/User?" +
+                "select=" + "emailAddress,teamsIds&" +
+                "where[0][attribute]=" + "userName&" +
+                "where[0][value]=" + "%s&" +
+                "where[0][type]=" + "equals";
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
@@ -213,13 +217,22 @@ public class CrmUserDataStorage implements UserDataStorage {
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
 
+            List<String> memberOfList = new ArrayList<>();
+            JsonNode teamsNamesNode = userJsonField.get("teamsNames");
+            if (teamsNamesNode != null) {
+                for (JsonNode teamNameNode : teamsNamesNode) {
+                    memberOfList.add(teamNameNode.textValue());
+                }
+            }
+
+            info.put("memberOf", memberOfList);
+
             // атрибут для имени в vcs системах (git)
             List<String> vcsName = new ArrayList<>(2);
             jsonToUserFieldSetter.accept("name", vcsName::add);
             jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
             info.put("vcsName", vcsName);
 
-            // TODO Группы!!!
         }
 
         return info;
