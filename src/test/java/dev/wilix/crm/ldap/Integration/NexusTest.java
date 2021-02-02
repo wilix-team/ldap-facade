@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class NexusTest extends AbstractLDAPTest {
 
-    private final String[] attributes = {"uid", "cn", "mail", "labeledUri"};
+    private final String[] attributes = {"uid", "cn", "mail"};
 
     @Test
     public void whenServiceBindAndUserSearchAndBindSuccessThenOK() throws IOException, InterruptedException, LDAPException {
