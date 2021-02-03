@@ -48,11 +48,9 @@ public abstract class AbstractLDAPTest {
 
     {
         String userSearchResponse;
-        String userSearchResponseWithoutTeams;
         String userBindResponseBody;
         try {
             Path filePath = Path.of(new ClassPathResource("service_search_response_body.json").getURI());
-            System.out.println(filePath);
             userSearchResponse = Files.readString(filePath);
         } catch (IOException e) {
             throw new RuntimeException(e);
