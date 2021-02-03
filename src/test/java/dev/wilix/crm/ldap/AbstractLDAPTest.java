@@ -1,13 +1,6 @@
 package dev.wilix.crm.ldap;
 
-import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.ldap.sdk.BindResult;
-import com.unboundid.ldap.sdk.LDAPConnection;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPSearchException;
-import com.unboundid.ldap.sdk.SearchResult;
-import com.unboundid.ldap.sdk.SearchResultEntry;
-import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.*;
 import dev.wilix.crm.ldap.config.properties.AppConfigurationProperties;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
 import org.junit.jupiter.api.Assertions;
@@ -15,6 +8,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,6 +16,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 
 import static org.mockito.Mockito.when;
@@ -37,6 +33,7 @@ public abstract class AbstractLDAPTest {
     HttpClient httpClient;
     @Mock
     HttpResponse<String> response;
+    public Boolean withTeam = true;
 
     private final String SERVICE_BASE_DN = "ou=services,dc=wilix,dc=dev";
     private final String PEOPLE_BASE_DN = "ou=people,dc=wilix,dc=dev";
@@ -47,9 +44,40 @@ public abstract class AbstractLDAPTest {
 
     private final String AUTH_URL = "/api/v1/App/user";
     private final String SERVICE_BIND_RESPONSE_BODY = "{\"user\":{\"id\":\"5fe06c48dc08fdb3d\",\"name\":\"ldap-service\",\"userName\":\"ldap-service\",\"emailAddress\":null}}";
-    private final String USER_BIND_RESPONSE_BODY = "{\"user\":{\"id\":\"5fe06c48dc08fdb3d\",\"name\":\"admin\",\"userName\":\"admin\",\"emailAddress\":null}}";
-    private final String SERVICE_SEARCH_RESPONSE_BODY = "{\"total\":1,\"list\":[{\"id\":\"5f7ad9914f960a46f\",\"name\":\"LDAP Admin\",\"userName\":\"admin\",\"isActive\":true,\"emailAddress\":null}]}";
+    private final String USER_BIND_RESPONSE_BODY;
+    private final String SERVICE_SEARCH_RESPONSE_BODY;
+    private final String SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS;
 
+    {
+        String userSearchResponse;
+        String userSearchResponseWithoutTeams;
+        String userBindResponseBody;
+        try {
+            Path filePath = Path.of(new ClassPathResource("service_search_response_body.json").getURI());
+            System.out.println(filePath);
+            userSearchResponse = Files.readString(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            Path filePath = Path.of(new ClassPathResource("service_search_response_body_without_teams.json").getURI());
+            userSearchResponseWithoutTeams = Files.readString(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            Path filePath = Path.of(new ClassPathResource("user_bind_response_body.json").getURI());
+            userBindResponseBody = Files.readString(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        USER_BIND_RESPONSE_BODY = userBindResponseBody;
+        SERVICE_SEARCH_RESPONSE_BODY = userSearchResponse;
+        SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS = userSearchResponseWithoutTeams;
+    }
     // LDAP
 
     protected LDAPConnection openLDAP() throws LDAPException {
@@ -118,7 +146,11 @@ public abstract class AbstractLDAPTest {
 
     private void setupSuccessSearchResponseBody() {
         when(response.statusCode()).thenReturn(200);
-        when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY);
+        if (withTeam) {
+            when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY);
+        } else {
+            when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS);
+        }
     }
 
     // COMMON
@@ -138,8 +170,7 @@ public abstract class AbstractLDAPTest {
     protected void checkSearchResultEntryAttributes(SearchResultEntry entry, String... attributes) {
         for (String attributeName : attributes) {
             Attribute attribute = entry.getAttribute(attributeName);
-
-            Assertions.assertNotNull(attribute);
+            Assertions.assertNotNull(attribute.getValue());
         }
     }
 
@@ -167,10 +198,11 @@ public abstract class AbstractLDAPTest {
                 .build();
     }
 
+    //todo - вынести uri
     private HttpRequest buildServiceSearchHttpRequest() {
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create("https://crm.wilix.org/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=" + TEST_USER + "&where[0][type]=equals"))
+                .uri(URI.create("https://crm.wilix.org/api/v1/User?select=emailAddress,teamsIds&where[0][attribute]=userName&where[0][value]=" + TEST_USER + "&where[0][type]=equals"))
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", TEST_PASS).build();
@@ -179,5 +211,4 @@ public abstract class AbstractLDAPTest {
     private URI getRequestURI() {
         return URI.create(userStorageConfig.getBaseUrl() + AUTH_URL);
     }
-
 }
