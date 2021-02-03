@@ -38,6 +38,3 @@ docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 # Примерные настройки для клиента ldap аутентификации в youtrack
 
 ![youtrack settings](youtrack-settings.png "YouTrack settings")
-
-./gradlew  test
-./gradlew clean  test  --info
