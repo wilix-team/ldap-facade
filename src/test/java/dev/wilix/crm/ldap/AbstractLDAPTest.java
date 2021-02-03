@@ -33,7 +33,6 @@ public abstract class AbstractLDAPTest {
     HttpClient httpClient;
     @Mock
     HttpResponse<String> response;
-    public Boolean withTeam = true;
 
     private final String SERVICE_BASE_DN = "ou=services,dc=wilix,dc=dev";
     private final String PEOPLE_BASE_DN = "ou=people,dc=wilix,dc=dev";
@@ -46,7 +45,6 @@ public abstract class AbstractLDAPTest {
     private final String SERVICE_BIND_RESPONSE_BODY = "{\"user\":{\"id\":\"5fe06c48dc08fdb3d\",\"name\":\"ldap-service\",\"userName\":\"ldap-service\",\"emailAddress\":null}}";
     private final String USER_BIND_RESPONSE_BODY;
     private final String SERVICE_SEARCH_RESPONSE_BODY;
-    private final String SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS;
 
     {
         String userSearchResponse;
@@ -61,13 +59,6 @@ public abstract class AbstractLDAPTest {
         }
 
         try {
-            Path filePath = Path.of(new ClassPathResource("service_search_response_body_without_teams.json").getURI());
-            userSearchResponseWithoutTeams = Files.readString(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
             Path filePath = Path.of(new ClassPathResource("user_bind_response_body.json").getURI());
             userBindResponseBody = Files.readString(filePath);
         } catch (IOException e) {
@@ -76,8 +67,8 @@ public abstract class AbstractLDAPTest {
 
         USER_BIND_RESPONSE_BODY = userBindResponseBody;
         SERVICE_SEARCH_RESPONSE_BODY = userSearchResponse;
-        SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS = userSearchResponseWithoutTeams;
-    }
+        // todo add test to without teams case
+     }
     // LDAP
 
     protected LDAPConnection openLDAP() throws LDAPException {
@@ -146,11 +137,7 @@ public abstract class AbstractLDAPTest {
 
     private void setupSuccessSearchResponseBody() {
         when(response.statusCode()).thenReturn(200);
-        if (withTeam) {
-            when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY);
-        } else {
-            when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY_WITHOUT_TEAMS);
-        }
+        when(response.body()).thenReturn(SERVICE_SEARCH_RESPONSE_BODY);
     }
 
     // COMMON
