@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
+@Disabled("Disabled")
 public class RealTest {
+
     @Test
     @Disabled("Для реального вызова")
     public void disabled() throws LDAPException {
@@ -20,7 +22,7 @@ public class RealTest {
         BindResult result = connection.bind("uid=svetlana.okuneva,ou=people,dc=wilix,dc=dev", "pwd");
 
         LDAPTestUtils.assertResultCodeEquals(result, ResultCode.SUCCESS);
-
+        System.out.println(result);
         connection.close();
     }
 }
