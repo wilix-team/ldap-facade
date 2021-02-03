@@ -47,26 +47,15 @@ public abstract class AbstractLDAPTest {
     private final String SERVICE_SEARCH_RESPONSE_BODY;
 
     {
-        String userSearchResponse;
-        String userBindResponseBody;
         try {
-            Path filePath = Path.of(new ClassPathResource("service_search_response_body.json").getURI());
-            userSearchResponse = Files.readString(filePath);
+            Path userBindPath = Path.of(new ClassPathResource("user_bind_response_body.json").getURI());
+            Path serviceSearchPath = Path.of(new ClassPathResource("service_search_response_body.json").getURI());
+            SERVICE_SEARCH_RESPONSE_BODY = Files.readString(serviceSearchPath);
+            USER_BIND_RESPONSE_BODY = Files.readString(userBindPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        try {
-            Path filePath = Path.of(new ClassPathResource("user_bind_response_body.json").getURI());
-            userBindResponseBody = Files.readString(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        USER_BIND_RESPONSE_BODY = userBindResponseBody;
-        SERVICE_SEARCH_RESPONSE_BODY = userSearchResponse;
-        // todo add test to without teams case
-     }
+    }
     // LDAP
 
     protected LDAPConnection openLDAP() throws LDAPException {
