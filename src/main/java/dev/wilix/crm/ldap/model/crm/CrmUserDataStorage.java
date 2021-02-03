@@ -96,15 +96,17 @@ public class CrmUserDataStorage implements UserDataStorage {
     public Map<String, List<String>> getInfo(String username, Authentication authentication) {
         Map<String, List<String>> info;
 
+
+        boolean canSearch = false;
         if (authentication instanceof UserAuthentication) {
             if (!((UserAuthentication) authentication).getUserName().equals(username)) {
                 LOG.warn("User tries to get another user.");
                 throw new IllegalStateException("User tries to get another user.");
             }
-            return users.getIfPresent(username);
+            canSearch = true;
         }
 
-        if (authentication instanceof ServiceAuthentication) {
+        if (canSearch || authentication instanceof ServiceAuthentication) {
             info = users.getIfPresent(username);
             if (info == null) {
                 info = searchUser(username, authentication);
