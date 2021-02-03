@@ -94,33 +94,28 @@ public class CrmUserDataStorage implements UserDataStorage {
 
     @Override
     public Map<String, List<String>> getInfo(String username, Authentication authentication) {
-        Map<String, List<String>> info = new HashMap<>();
+        Map<String, List<String>> info;
 
-        boolean canGetFromCache = false;
+        if (authentication instanceof UserAuthentication) {
+            if (!((UserAuthentication) authentication).getUserName().equals(username)) {
+                LOG.warn("User tries to get another user.");
+                throw new IllegalStateException("User tries to get another user.");
+            }
+            return users.getIfPresent(username);
+        }
+
         if (authentication instanceof ServiceAuthentication) {
-            canGetFromCache = true;
-        } else if (authentication instanceof UserAuthentication) {
-            UserAuthentication userAuthentication = ((UserAuthentication) authentication);
-            if (username.equals(userAuthentication.getUserName())) {
-                canGetFromCache = true;
-            }
-        }
-
-        if (canGetFromCache) {
             info = users.getIfPresent(username);
-        }
-
-        if (info == null) {
-            if (authentication instanceof ServiceAuthentication) {
+            if (info == null) {
                 info = searchUser(username, authentication);
+                if (info != null && !info.isEmpty()) {
+                    users.put(username, info);
+                }
             }
-
-            if (info != null && !info.isEmpty()) {
-                users.put(username, info);
-            }
+            return info;
         }
-
-        return info;
+        LOG.error("Unknown authentication format.");
+        throw new IllegalStateException("Unknown authentication format.");
     }
 
     private Map<String, List<String>> authenticateWithUserCredentials(String userName, String password) {
