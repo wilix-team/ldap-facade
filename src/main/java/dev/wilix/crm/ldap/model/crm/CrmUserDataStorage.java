@@ -8,6 +8,7 @@ import com.google.common.net.HttpHeaders;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
 import dev.wilix.crm.ldap.model.Authentication;
 import dev.wilix.crm.ldap.model.UserDataStorage;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +46,29 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .build();
 
         // TODO делать безопасное формирование с учетом граничных условий.
-        searchUserUriTemplate = config.getBaseUrl() + "/api/v1/User?" +
-                "select=" + "emailAddress,teamsIds&" +
-                "where[0][attribute]=" + "userName&" +
-                "where[0][value]=" + "%s&" +
-                "where[0][type]=" + "equals";
+        searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl(), "%s");
         // todo проверить есть ли тут группы
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
+    }
+
+    public static String getSearchUserUriTemplate(String uri, String username) {
+        final String searchUserUriTemplate;
+        String searchUserUri = "";
+
+        try {
+            URIBuilder builder = new URIBuilder(  uri);
+            builder.setScheme("https");
+            builder.setPath("/api/v1/User");
+            builder.addParameter("select", "mailAddress,teamsIds");
+            builder.addParameter("where[0][attribute]",  username);
+            builder.addParameter("where[0][type]", "equals");
+            searchUserUri = builder.build().toURL().toString();
+            searchUserUri = java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        searchUserUriTemplate = searchUserUri;
+        return searchUserUriTemplate;
     }
 
     @Override
@@ -244,5 +261,4 @@ public class CrmUserDataStorage implements UserDataStorage {
 
         return info;
     }
-
 }

@@ -3,6 +3,7 @@ package dev.wilix.crm.ldap;
 import com.unboundid.ldap.sdk.*;
 import dev.wilix.crm.ldap.config.properties.AppConfigurationProperties;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.crm.ldap.model.crm.CrmUserDataStorage;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -172,11 +173,12 @@ public abstract class AbstractLDAPTest {
                 .build();
     }
 
-    //todo - вынести uri
     private HttpRequest buildServiceSearchHttpRequest() {
+        String uri = CrmUserDataStorage.getSearchUserUriTemplate("https://crm.wilix.org", TEST_USER);
+
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create("https://crm.wilix.org/api/v1/User?select=emailAddress,teamsIds&where[0][attribute]=userName&where[0][value]=" + TEST_USER + "&where[0][type]=equals"))
+                .uri(URI.create(uri))
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", TEST_PASS).build();
