@@ -17,11 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -54,6 +50,7 @@ public class CrmUserDataStorage implements UserDataStorage {
                 "where[0][attribute]=" + "userName&" +
                 "where[0][value]=" + "%s&" +
                 "where[0][type]=" + "equals";
+        // todo проверить есть ли тут группы
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
@@ -97,7 +94,21 @@ public class CrmUserDataStorage implements UserDataStorage {
 
     @Override
     public Map<String, List<String>> getInfo(String username, Authentication authentication) {
-        var info = users.getIfPresent(username);
+        Map<String, List<String>> info = new HashMap<>();
+
+        boolean canGetFromCache = false;
+        if (authentication instanceof ServiceAuthentication) {
+            canGetFromCache = true;
+        } else if (authentication instanceof UserAuthentication) {
+            UserAuthentication userAuthentication = ((UserAuthentication) authentication);
+            if (username.equals(userAuthentication.getUserName())) {
+                canGetFromCache = true;
+            }
+        }
+
+        if (canGetFromCache) {
+            info = users.getIfPresent(username);
+        }
 
         if (info == null) {
             if (authentication instanceof ServiceAuthentication) {
@@ -232,7 +243,6 @@ public class CrmUserDataStorage implements UserDataStorage {
             jsonToUserFieldSetter.accept("name", vcsName::add);
             jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
             info.put("vcsName", vcsName);
-
         }
 
         return info;
