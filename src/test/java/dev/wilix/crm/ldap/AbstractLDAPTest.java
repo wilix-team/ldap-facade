@@ -1,6 +1,13 @@
 package dev.wilix.crm.ldap;
 
-import com.unboundid.ldap.sdk.*;
+import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.BindResult;
+import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPSearchException;
+import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.sdk.SearchScope;
 import dev.wilix.crm.ldap.config.properties.AppConfigurationProperties;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
 import dev.wilix.crm.ldap.model.crm.CrmUserDataStorage;
