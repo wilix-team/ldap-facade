@@ -51,7 +51,7 @@ public class CrmUserDataStorage implements UserDataStorage {
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
-    public static String getSearchUserUriTemplate(String uri) {
+    private static String getSearchUserUriTemplate(String uri) {
         try {
             URIBuilder builder = new URIBuilder(uri);
             builder.setScheme("https");

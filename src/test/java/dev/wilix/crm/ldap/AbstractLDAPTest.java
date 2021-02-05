@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -175,8 +176,17 @@ public abstract class AbstractLDAPTest {
                 .build();
     }
 
-    private HttpRequest buildServiceSearchHttpRequest() {
-        String uriTemplate = CrmUserDataStorage.getSearchUserUriTemplate("https://crm.wilix.org");
+    private HttpRequest buildServiceSearchHttpRequest() throws InterruptedException {
+
+        String uriTemplate = "";
+        try {
+            Method getSearchUserUriTemplateMethod = CrmUserDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
+            getSearchUserUriTemplateMethod.setAccessible(true);
+            uriTemplate = (String) getSearchUserUriTemplateMethod.invoke(null, "https://crm.wilix.org");
+        } catch (Exception e) {
+            throw new InterruptedException(e.getMessage());
+        }
+
         URI uri = URI.create(String.format(uriTemplate, TEST_USER));
         return HttpRequest.newBuilder()
                 .GET()
