@@ -55,7 +55,7 @@ public class RootConfig {
     }
 
     /**
-     * Подготовка конфигурации слушателя ldap содеинения для возможности принимать соединения по защищенному каналу.
+     * Подготовка конфигурации слушателя ldap-соединения для возможности принимать соединения по защищенному каналу.
      */
     private void configureSSL(LDAPListenerConfig ldapListenerConfig) throws GeneralSecurityException {
         var serverKeyStorePath = Path.of(config.getKeyStorePath()).toFile().getAbsolutePath();

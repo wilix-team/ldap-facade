@@ -10,18 +10,24 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import dev.wilix.crm.ldap.config.properties.AppConfigurationProperties;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.crm.ldap.model.crm.CrmUserDataStorage;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 
 import static org.mockito.Mockito.when;
@@ -47,9 +53,22 @@ public abstract class AbstractLDAPTest {
 
     private final String AUTH_URL = "/api/v1/App/user";
     private final String SERVICE_BIND_RESPONSE_BODY = "{\"user\":{\"id\":\"5fe06c48dc08fdb3d\",\"name\":\"ldap-service\",\"userName\":\"ldap-service\",\"emailAddress\":null}}";
-    private final String USER_BIND_RESPONSE_BODY = "{\"user\":{\"id\":\"5fe06c48dc08fdb3d\",\"name\":\"admin\",\"userName\":\"admin\",\"emailAddress\":null}}";
-    private final String SERVICE_SEARCH_RESPONSE_BODY = "{\"total\":1,\"list\":[{\"id\":\"5f7ad9914f960a46f\",\"name\":\"LDAP Admin\",\"userName\":\"admin\",\"isActive\":true,\"emailAddress\":null}]}";
+    private final String USER_BIND_RESPONSE_BODY;
+    private final String SERVICE_SEARCH_RESPONSE_BODY;
 
+
+    public AbstractLDAPTest() {
+        try {
+            SERVICE_SEARCH_RESPONSE_BODY = getResourceAsString("service_search_response_body.json");
+            USER_BIND_RESPONSE_BODY = getResourceAsString("user_bind_response_body.json");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getResourceAsString(String s) throws IOException {
+        return Files.readString(Path.of(new ClassPathResource(s).getURI()));
+    }
     // LDAP
 
     protected LDAPConnection openLDAP() throws LDAPException {
@@ -138,8 +157,7 @@ public abstract class AbstractLDAPTest {
     protected void checkSearchResultEntryAttributes(SearchResultEntry entry, String... attributes) {
         for (String attributeName : attributes) {
             Attribute attribute = entry.getAttribute(attributeName);
-
-            Assertions.assertNotNull(attribute);
+            Assertions.assertNotNull(attribute.getValue());
         }
     }
 
@@ -168,9 +186,21 @@ public abstract class AbstractLDAPTest {
     }
 
     private HttpRequest buildServiceSearchHttpRequest() {
+
+        String uriTemplate = "";
+        try {
+            // используем рефлексию, чтобы не потерять абстракцию
+            Method getSearchUserUriTemplateMethod = CrmUserDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
+            getSearchUserUriTemplateMethod.setAccessible(true);
+            uriTemplate = (String) getSearchUserUriTemplateMethod.invoke(null, "https://crm.wilix.org");
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        URI uri = URI.create(String.format(uriTemplate, TEST_USER));
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create("https://crm.wilix.org/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=" + TEST_USER + "&where[0][type]=equals"))
+                .uri(uri)
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", TEST_PASS).build();
@@ -179,5 +209,4 @@ public abstract class AbstractLDAPTest {
     private URI getRequestURI() {
         return URI.create(userStorageConfig.getBaseUrl() + AUTH_URL);
     }
-
 }

@@ -1,4 +1,4 @@
-# crm-ldap-dacade
+# crm-ldap-facade
 
 ldap авторизация для CRM пользователей
 
@@ -30,7 +30,7 @@ keytool -importkeystore -deststorepass <passwd> -destkeypass <passwd> -destkeyst
 grandlew clean build docker
 ```
 2. Или получить из приватного репозитория компании готовый образ (docker.wilix.dev)
-3. Запустить образ. Требуется не забыть в контейнер пробросить хранилище клячей, сформированное ранее.
+3. Запустить образ. Требуется не забыть в контейнер пробросить хранилище ключей, сформированное ранее.
 ```bash
 docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 ```

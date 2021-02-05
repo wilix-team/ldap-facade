@@ -8,11 +8,14 @@ import com.google.common.net.HttpHeaders;
 import dev.wilix.crm.ldap.config.properties.UserDataStorageConfigurationProperties;
 import dev.wilix.crm.ldap.model.Authentication;
 import dev.wilix.crm.ldap.model.UserDataStorage;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -48,9 +51,24 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
 
-        // TODO делать безопасное формирование с учетом граничных условий.
-        searchUserUriTemplate = config.getBaseUrl() + "/api/v1/User?select=emailAddress&where[0][attribute]=userName&where[0][value]=%s&where[0][type]=equals";
+        searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl());
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
+    }
+
+    private static String getSearchUserUriTemplate(String baseUri) {
+        try {
+            URIBuilder builder = new URIBuilder(baseUri);
+            builder.setScheme("https");
+            builder.setPath("/api/v1/User");
+            builder.addParameter("select", "mailAddress,teamsIds");
+            builder.addParameter("where[0][attribute]", "%s");
+            builder.addParameter("where[0][type]", "equals");
+            String searchUserUri = builder.build().toURL().toString();
+            return java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
+        } catch (URISyntaxException | MalformedURLException e) {
+            LOG.debug("Problem with URIBuilder: {}", baseUri);
+            throw new IllegalStateException("Problem with URIBuilder", e);
+        }
     }
 
     @Override
@@ -92,20 +110,33 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     @Override
-    public Map<String, List<String>> getInfo(String username, Authentication authentication) {
-        var info = users.getIfPresent(username);
+    public Map<String, List<String>> getInfo(String userName, Authentication authentication) {
 
-        if (info == null) {
-            if (authentication instanceof ServiceAuthentication) {
-                info = searchUser(username, authentication);
-            }
-
-            if (info != null && !info.isEmpty()) {
-                users.put(username, info);
-            }
+        if (!canSearch(authentication, userName)) {
+            String message = String.format("Authentication %s can't access to search %s", authentication, userName);
+            throw new IllegalStateException(message);
         }
 
+        Map<String, List<String>> info = users.getIfPresent(userName);
+        if (info == null) {
+            info = searchUser(userName, authentication);
+            if (!info.isEmpty()) {
+                users.put(userName, info);
+            }
+        }
         return info;
+    }
+
+    private boolean canSearch(Authentication authentication, String username) {
+        if (authentication instanceof ServiceAuthentication) {
+            return true;
+        }
+        if (authentication instanceof UserAuthentication) {
+            return ((UserAuthentication) authentication).getUserName().equals(username);
+        }
+
+        LOG.error("Unknown authentication format.");
+        throw new IllegalStateException("Unknown authentication format.");
     }
 
     private Map<String, List<String>> authenticateWithUserCredentials(String userName, String password) {
@@ -130,17 +161,19 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     private Map<String, List<String>> searchUser(String userName, Authentication authentication) {
-        if (authentication instanceof ServiceAuthentication) {
-            HttpRequest.Builder request = prepareUserSearchRequest(userName);
 
+        HttpRequest.Builder request = prepareUserSearchRequest(userName);
+        if (authentication instanceof ServiceAuthentication) {
             String token = ((ServiceAuthentication) authentication).getToken();
             request.setHeader("X-Api-Key", token);
-
-            return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
+        } else if (authentication instanceof UserAuthentication) {
+            String password = ((UserAuthentication) authentication).getPassword();
+            String base64Credentials = Base64.getEncoder()
+                    .encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
+            request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
         }
 
-        // TODO
-        throw new IllegalStateException("Can't search user info with non ServiceAccount.");
+        return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
     }
 
     private HttpRequest.Builder prepareUserSearchRequest(String userName) {
@@ -213,16 +246,23 @@ public class CrmUserDataStorage implements UserDataStorage {
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
 
+            List<String> memberOfList = new ArrayList<>();
+            JsonNode teamsNamesNode = userJsonField.get("teamsNames");
+            if (teamsNamesNode != null) {
+                for (JsonNode teamNameNode : teamsNamesNode) {
+                    memberOfList.add(teamNameNode.textValue());
+                }
+            }
+
+            info.put("memberOf", memberOfList);
+
             // атрибут для имени в vcs системах (git)
             List<String> vcsName = new ArrayList<>(2);
             jsonToUserFieldSetter.accept("name", vcsName::add);
             jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
             info.put("vcsName", vcsName);
-
-            // TODO Группы!!!
         }
 
         return info;
     }
-
 }

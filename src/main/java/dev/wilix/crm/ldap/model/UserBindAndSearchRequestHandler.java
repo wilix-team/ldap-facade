@@ -128,7 +128,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
         LOG.info("There was a successful authentication {}.", authResult);
 
-        // Как правило первой в соединении происходит аутентификация сервиса с токеном, а затем пользоватеелей.
+        // Как правило, первой в соединении происходит аутентификация сервиса с токеном, а затем пользователей.
         // Поэтому присваивается только результат первой аутентификации.
         if (this.authentication == null) {
             this.authentication = authResult;
