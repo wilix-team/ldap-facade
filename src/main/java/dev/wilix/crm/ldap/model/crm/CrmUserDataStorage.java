@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -49,15 +51,13 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
 
-        // TODO делать безопасное формирование с учетом граничных условий.
         searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl());
-        // todo проверить есть ли тут группы
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
-    private static String getSearchUserUriTemplate(String uri) {
+    private static String getSearchUserUriTemplate(String baseUri) {
         try {
-            URIBuilder builder = new URIBuilder(uri);
+            URIBuilder builder = new URIBuilder(baseUri);
             builder.setScheme("https");
             builder.setPath("/api/v1/User");
             builder.addParameter("select", "mailAddress,teamsIds");
@@ -65,8 +65,8 @@ public class CrmUserDataStorage implements UserDataStorage {
             builder.addParameter("where[0][type]", "equals");
             String searchUserUri = builder.build().toURL().toString();
             return java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            LOG.debug("Problem with URIBuilder: {}", uri);
+        } catch (URISyntaxException | MalformedURLException e) {
+            LOG.debug("Problem with URIBuilder: {}", baseUri);
             throw new IllegalStateException("Problem with URIBuilder", e);
         }
     }
@@ -113,13 +113,14 @@ public class CrmUserDataStorage implements UserDataStorage {
     public Map<String, List<String>> getInfo(String userName, Authentication authentication) {
 
         if (!canSearch(authentication, userName)) {
-            throw new IllegalStateException("User tries to get another user.");
+            String message = String.format("Authentication %s can't access to search %s", authentication, userName);
+            throw new IllegalStateException(message);
         }
 
         Map<String, List<String>> info = users.getIfPresent(userName);
         if (info == null) {
             info = searchUser(userName, authentication);
-            if (info != null && !info.isEmpty()) {
+            if (!info.isEmpty()) {
                 users.put(userName, info);
             }
         }
@@ -133,6 +134,8 @@ public class CrmUserDataStorage implements UserDataStorage {
         if (authentication instanceof UserAuthentication) {
             return ((UserAuthentication) authentication).getUserName().equals(username);
         }
+
+        LOG.error("Unknown authentication format.");
         throw new IllegalStateException("Unknown authentication format.");
     }
 
@@ -158,21 +161,17 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     private Map<String, List<String>> searchUser(String userName, Authentication authentication) {
-        boolean canSearch;
-        try {
-            canSearch = canSearch(authentication, userName);
-        } catch (Exception e) {
-            LOG.error("Unknown authentication format.");
-            throw new IllegalStateException("Unknown authentication format.");
-        }
-        if (!canSearch) {
-            throw new IllegalStateException("Can't search user info with non ServiceAccount.");
-        }
 
         HttpRequest.Builder request = prepareUserSearchRequest(userName);
-
-        String token = ((ServiceAuthentication) authentication).getToken();
-        request.setHeader("X-Api-Key", token);
+        if (authentication instanceof ServiceAuthentication) {
+            String token = ((ServiceAuthentication) authentication).getToken();
+            request.setHeader("X-Api-Key", token);
+        } else if (authentication instanceof UserAuthentication) {
+            String password = ((UserAuthentication) authentication).getPassword();
+            String base64Credentials = Base64.getEncoder()
+                    .encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
+            request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
+        }
 
         return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
     }

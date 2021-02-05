@@ -189,6 +189,7 @@ public abstract class AbstractLDAPTest {
 
         String uriTemplate = "";
         try {
+            // используем рефлексию, чтобы не потерять абстракцию
             Method getSearchUserUriTemplateMethod = CrmUserDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
             getSearchUserUriTemplateMethod.setAccessible(true);
             uriTemplate = (String) getSearchUserUriTemplateMethod.invoke(null, "https://crm.wilix.org");
