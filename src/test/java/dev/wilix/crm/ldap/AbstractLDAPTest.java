@@ -49,13 +49,15 @@ public abstract class AbstractLDAPTest {
 
     {
         try {
-            Path userBindPath = Path.of(new ClassPathResource("user_bind_response_body.json").getURI());
-            Path serviceSearchPath = Path.of(new ClassPathResource("service_search_response_body.json").getURI());
-            SERVICE_SEARCH_RESPONSE_BODY = Files.readString(serviceSearchPath);
-            USER_BIND_RESPONSE_BODY = Files.readString(userBindPath);
+            SERVICE_SEARCH_RESPONSE_BODY = Files.readString(getResourceAsString("service_search_response_body.json"));
+            USER_BIND_RESPONSE_BODY = Files.readString(getResourceAsString("user_bind_response_body.json"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Path getResourceAsString(String s) throws IOException {
+        return Path.of(new ClassPathResource(s).getURI());
     }
     // LDAP
 
