@@ -176,11 +176,11 @@ public abstract class AbstractLDAPTest {
     }
 
     private HttpRequest buildServiceSearchHttpRequest() {
-        String uri = CrmUserDataStorage.getSearchUserUriTemplate("https://crm.wilix.org", TEST_USER);
-
+        String uriTemplate = CrmUserDataStorage.getSearchUserUriTemplate("https://crm.wilix.org");
+        URI uri = URI.create(String.format(uriTemplate, TEST_USER));
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create(uri))
+                .uri(uri)
                 .setHeader("User-Agent", "ldap-facade")
                 .setHeader("Content-Type", "application/json; charset=utf-8")
                 .setHeader("X-Api-Key", TEST_PASS).build();

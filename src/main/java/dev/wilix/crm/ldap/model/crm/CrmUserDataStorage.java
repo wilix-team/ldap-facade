@@ -46,29 +46,25 @@ public class CrmUserDataStorage implements UserDataStorage {
                 .build();
 
         // TODO делать безопасное формирование с учетом граничных условий.
-        searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl(), "%s");
+        searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl());
         // todo проверить есть ли тут группы
         authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
     }
 
-    public static String getSearchUserUriTemplate(String uri, String username) {
-        final String searchUserUriTemplate;
-        String searchUserUri = "";
-
+    public static String getSearchUserUriTemplate(String uri) {
         try {
-            URIBuilder builder = new URIBuilder(  uri);
+            URIBuilder builder = new URIBuilder(uri);
             builder.setScheme("https");
             builder.setPath("/api/v1/User");
             builder.addParameter("select", "mailAddress,teamsIds");
-            builder.addParameter("where[0][attribute]",  username);
+            builder.addParameter("where[0][attribute]", "%s");
             builder.addParameter("where[0][type]", "equals");
-            searchUserUri = builder.build().toURL().toString();
-            searchUserUri = java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
+            String searchUserUri = builder.build().toURL().toString();
+            return java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.debug("Problem with URIBuilder: {}", uri);
+            throw new IllegalStateException("Problem with URIBuilder", e);
         }
-        searchUserUriTemplate = searchUserUri;
-        return searchUserUriTemplate;
     }
 
     @Override
@@ -110,30 +106,30 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     @Override
-    public Map<String, List<String>> getInfo(String username, Authentication authentication) {
-        Map<String, List<String>> info;
+    public Map<String, List<String>> getInfo(String userName, Authentication authentication) {
+        boolean canGetInfo = canSearch(authentication, userName);
 
+        if (!canGetInfo) {
+            throw new IllegalStateException("User tries to get another user.");
+        }
 
-        boolean canSearch = false;
+        Map<String, List<String>> info = users.getIfPresent(userName);
+        if (info == null) {
+            info = searchUser(userName, authentication);
+            if (info != null && !info.isEmpty()) {
+                users.put(userName, info);
+            }
+        }
+        return info;
+    }
+
+    private boolean canSearch(Authentication authentication, String username) {
+        if (authentication instanceof ServiceAuthentication) {
+            return true;
+        }
         if (authentication instanceof UserAuthentication) {
-            if (!((UserAuthentication) authentication).getUserName().equals(username)) {
-                LOG.warn("User tries to get another user.");
-                throw new IllegalStateException("User tries to get another user.");
-            }
-            canSearch = true;
+            return ((UserAuthentication) authentication).getUserName().equals(username);
         }
-
-        if (canSearch || authentication instanceof ServiceAuthentication) {
-            info = users.getIfPresent(username);
-            if (info == null) {
-                info = searchUser(username, authentication);
-                if (info != null && !info.isEmpty()) {
-                    users.put(username, info);
-                }
-            }
-            return info;
-        }
-        LOG.error("Unknown authentication format.");
         throw new IllegalStateException("Unknown authentication format.");
     }
 
@@ -159,17 +155,23 @@ public class CrmUserDataStorage implements UserDataStorage {
     }
 
     private Map<String, List<String>> searchUser(String userName, Authentication authentication) {
-        if (authentication instanceof ServiceAuthentication) {
-            HttpRequest.Builder request = prepareUserSearchRequest(userName);
-
-            String token = ((ServiceAuthentication) authentication).getToken();
-            request.setHeader("X-Api-Key", token);
-
-            return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
+        boolean canSearch;
+        try {
+            canSearch = canSearch(authentication, userName);
+        } catch (Exception e) {
+            LOG.error("Unknown authentication format.");
+            throw new IllegalStateException("Unknown authentication format.");
+        }
+        if (!canSearch) {
+            throw new IllegalStateException("Can't search user info with non ServiceAccount.");
         }
 
-        // TODO
-        throw new IllegalStateException("Can't search user info with non ServiceAccount.");
+        HttpRequest.Builder request = prepareUserSearchRequest(userName);
+
+        String token = ((ServiceAuthentication) authentication).getToken();
+        request.setHeader("X-Api-Key", token);
+
+        return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
     }
 
     private HttpRequest.Builder prepareUserSearchRequest(String userName) {
