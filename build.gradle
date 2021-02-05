@@ -55,4 +55,3 @@ dockerRun {
     ports("10636:10636")
     env(['LISTENER_SSLENABLED':'false'])
 }
-// https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
