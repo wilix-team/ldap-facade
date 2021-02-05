@@ -107,9 +107,8 @@ public class CrmUserDataStorage implements UserDataStorage {
 
     @Override
     public Map<String, List<String>> getInfo(String userName, Authentication authentication) {
-        boolean canGetInfo = canSearch(authentication, userName);
 
-        if (!canGetInfo) {
+        if (!canSearch(authentication, userName)) {
             throw new IllegalStateException("User tries to get another user.");
         }
 
