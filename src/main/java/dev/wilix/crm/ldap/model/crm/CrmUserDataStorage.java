@@ -60,8 +60,9 @@ public class CrmUserDataStorage implements UserDataStorage {
             URIBuilder builder = new URIBuilder(baseUri);
             builder.setScheme("https");
             builder.setPath("/api/v1/User");
-            builder.addParameter("select", "mailAddress,teamsIds");
-            builder.addParameter("where[0][attribute]", "%s");
+            builder.addParameter("select", "emailAddress,teamsIds");
+            builder.addParameter("where[0][attribute]", "userName");
+            builder.addParameter("where[0][value]", "%s");
             builder.addParameter("where[0][type]", "equals");
             String searchUserUri = builder.build().toURL().toString();
             return java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
@@ -242,6 +243,11 @@ public class CrmUserDataStorage implements UserDataStorage {
 
             info.put("company", List.of("WILIX"));
 
+            // Вставляем разного рода идентификаторы, для пользуюзихся сервисов.
+            jsonToUserFieldSetter.accept("id", value -> info.put("entryuuid", List.of(value)));
+            jsonToUserFieldSetter.accept("objectguid", value -> info.put("objectguid", List.of(value)));
+            jsonToUserFieldSetter.accept("guid", value -> info.put("guid", List.of(value)));
+
             jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
@@ -249,12 +255,10 @@ public class CrmUserDataStorage implements UserDataStorage {
             List<String> memberOfList = new ArrayList<>();
             JsonNode teamsNamesNode = userJsonField.get("teamsNames");
             if (teamsNamesNode != null) {
-                for (JsonNode teamNameNode : teamsNamesNode) {
-                    memberOfList.add(teamNameNode.textValue());
-                }
+                teamsNamesNode.elements()
+                        .forEachRemaining((teamNameNode) -> memberOfList.add(teamNameNode.textValue()));
             }
-
-            info.put("memberOf", memberOfList);
+            info.put("memberof", memberOfList);
 
             // атрибут для имени в vcs системах (git)
             List<String> vcsName = new ArrayList<>(2);

@@ -149,11 +149,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     }
 
     private String extractServiceName(BindRequestProtocolOp request) {
-        String serviceName = null;
-        Matcher matcher = DN_TO_SERVICENAME_PATTERN.matcher(request.getBindDN());
-        if (matcher.matches()) {
-            serviceName = matcher.group(1);
-        }
+        String serviceName = firstGroupFromPattern(DN_TO_SERVICENAME_PATTERN, request.getBindDN());
 
         if (serviceName == null || serviceName.isBlank()) {
             throw new IllegalArgumentException("No service name in request");
@@ -163,11 +159,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     }
 
     private String extractUserName(BindRequestProtocolOp request) {
-        String userName = null;
-        Matcher matcher = DN_TO_USERNAME_PATTERN.matcher(request.getBindDN());
-        if (matcher.matches()) {
-            userName = matcher.group(1);
-        }
+        String userName = firstGroupFromPattern(DN_TO_USERNAME_PATTERN, request.getBindDN());
 
         if (userName == null || userName.isBlank()) {
             throw new IllegalArgumentException("No user name in request");
@@ -181,8 +173,9 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         LOG.info("Receive search request: {}", request);
 
         // Вытаскиваем имя пользователя из фильтра для поиска.
-        String userName = extractUserNameFromSearchFilter(request.getFilter().toNormalizedString());
+        String userName = extractUserNameFromSearchRequest(request);
         if (userName == null || userName.isBlank()) {
+            LOG.warn("Can't extract user name from request {}", request);
             return new LDAPMessage(messageID, new SearchResultDoneProtocolOp(
                     ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE, null,
                     "No username in filter!",
@@ -213,6 +206,11 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
 
+        // Так же генерируем уникальное имя в атрибуты ответа, если требуется
+        if (request.getAttributes().contains("dn") && ! info.containsKey("dn")) {
+            info.put("dn", List.of(String.format(USER_DN_FROM_LOGIN_TEMPLATE, userName)));
+        }
+
         // TODO Сделать более безопасным.
         entry.setDN(String.format(USER_DN_FROM_LOGIN_TEMPLATE, userName));
 
@@ -237,18 +235,27 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                 Collections.emptyList());
     }
 
-    private String extractUserNameFromSearchFilter(String bindDN) {
-        return regExpFindFirstGroup(SEARCH_FILTER_TO_USERNAME_PATTERN, bindDN);
-    }
+    private String extractUserNameFromSearchRequest(SearchRequestProtocolOp request) {
+        String result;
 
-    private String regExpFindFirstGroup(Pattern regExpPattern, String valueToScan) {
-        Matcher matcher = regExpPattern.matcher(valueToScan);
+        result = firstGroupFromPattern(SEARCH_FILTER_TO_USERNAME_PATTERN, request.getFilter().toNormalizedString());
 
-        if (!matcher.find()) {
-            return null;
+        if (result == null) {
+            result = firstGroupFromPattern(DN_TO_USERNAME_PATTERN, request.getBaseDN());
         }
 
-        return matcher.group(1);
+        return result;
+    }
+
+    private String firstGroupFromPattern(Pattern regExpPattern, String valueToScan) {
+        String result = null;
+
+        Matcher matcher = regExpPattern.matcher(valueToScan);
+        if (matcher.find()) {
+            result = matcher.group(1);
+        }
+
+        return result;
     }
 
 }

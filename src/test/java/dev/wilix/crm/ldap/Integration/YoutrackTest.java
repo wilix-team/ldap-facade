@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class YoutrackTest extends AbstractLDAPTest {
 
-    private final String[] attributes = {"uid", "cn", "mail", "memberOf"};
+    private final String[] attributes = {"uid", "cn", "mail", "memberof"};
 
     @Test
     public void whenServiceBindAndUserSearchAndBindSuccessThenOK() throws IOException, InterruptedException, LDAPException {
