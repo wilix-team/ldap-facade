@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server.model;
+package dev.wilix.ldap.facade.server.processing;
 
 import com.unboundid.ldap.listener.LDAPListenerClientConnection;
 import com.unboundid.ldap.listener.LDAPListenerRequestHandler;

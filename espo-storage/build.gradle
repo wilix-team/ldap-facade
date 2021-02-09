@@ -10,11 +10,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
 
     implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
-
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
-
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
-
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
 }
 

@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.espo.properties;
+package dev.wilix.ldap.facade.espo.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;

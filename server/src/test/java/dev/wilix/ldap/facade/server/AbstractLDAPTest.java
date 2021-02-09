@@ -9,7 +9,7 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import dev.wilix.ldap.facade.server.config.properties.AppConfigurationProperties;
-import dev.wilix.ldap.facade.espo.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
 import dev.wilix.ldap.facade.espo.CrmUserDataStorage;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;

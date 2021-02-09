@@ -7,7 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HttpHeaders;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.UserDataStorage;
-import dev.wilix.ldap.facade.espo.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
