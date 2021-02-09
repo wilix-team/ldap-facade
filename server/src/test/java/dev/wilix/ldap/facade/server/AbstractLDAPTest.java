@@ -8,7 +8,7 @@ import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
-import dev.wilix.ldap.facade.server.config.properties.AppConfigurationProperties;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
 import dev.wilix.ldap.facade.espo.CrmUserDataStorage;
 import org.junit.jupiter.api.Assertions;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public abstract class AbstractLDAPTest {
 
     @Autowired
-    AppConfigurationProperties config;
+    ServerConfigurationProperties config;
     @Autowired
     UserDataStorageConfigurationProperties userStorageConfig;
     @MockBean

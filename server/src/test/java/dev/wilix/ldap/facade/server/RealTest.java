@@ -7,7 +7,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
-import dev.wilix.ldap.facade.server.config.properties.AppConfigurationProperties;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import java.security.GeneralSecurityException;
 public class RealTest {
 
     @Autowired
-    private AppConfigurationProperties config;
+    private ServerConfigurationProperties config;
 
     @Test
     @Disabled("Для реального вызова")

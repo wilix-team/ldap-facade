@@ -7,7 +7,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "storage.user")
 public class UserDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
-    private String userDirectAuthUri;
     private String baseUrl;
 
     public int getCacheExpirationMinutes() {
@@ -16,14 +15,6 @@ public class UserDataStorageConfigurationProperties {
 
     public void setCacheExpirationMinutes(int cacheExpirationMinutes) {
         this.cacheExpirationMinutes = cacheExpirationMinutes;
-    }
-
-    public String getUserDirectAuthUri() {
-        return userDirectAuthUri;
-    }
-
-    public void setUserDirectAuthUri(String userDirectAuthUri) {
-        this.userDirectAuthUri = userDirectAuthUri;
     }
 
     public String getBaseUrl() {

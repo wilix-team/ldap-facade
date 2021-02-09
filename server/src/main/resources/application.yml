@@ -6,5 +6,4 @@ listener:
 
 storage.user:
   cacheExpirationMinutes: 2
-  userDirectAuthUri: https://staff.wilix.org/red/api/sso/authenticate
   baseUrl: https://crm.wilix.org

@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * TODO Включить валидацию для этой штуки.
  */
 @ConfigurationProperties(prefix = "listener")
-public class AppConfigurationProperties {
+public class ServerConfigurationProperties {
 
     /**
      * A listen port of zero indicates that the listener should

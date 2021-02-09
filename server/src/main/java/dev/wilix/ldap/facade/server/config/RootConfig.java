@@ -6,9 +6,7 @@ import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
 import com.unboundid.util.ssl.KeyStoreKeyManager;
 import com.unboundid.util.ssl.SSLUtil;
 import dev.wilix.ldap.facade.api.UserDataStorage;
-import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
-import dev.wilix.ldap.facade.server.Application;
-import dev.wilix.ldap.facade.server.config.properties.AppConfigurationProperties;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import dev.wilix.ldap.facade.server.processing.UserBindAndSearchRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +19,13 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 
 @Configuration
-@EnableConfigurationProperties({AppConfigurationProperties.class})
+@EnableConfigurationProperties({ServerConfigurationProperties.class})
 public class RootConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(RootConfig.class);
 
     @Autowired
-    AppConfigurationProperties config;
+    ServerConfigurationProperties config;
 
     @Bean
     public LDAPListener ldapListener(LDAPListenerConfig listenerConfig) {
