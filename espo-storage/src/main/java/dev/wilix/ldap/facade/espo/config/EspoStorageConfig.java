@@ -2,8 +2,8 @@ package dev.wilix.ldap.facade.espo.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.wilix.ldap.facade.api.UserDataStorage;
-import dev.wilix.ldap.facade.espo.CrmUserDataStorage;
-import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.ldap.facade.espo.EspoUserDataStorage;
+import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,12 +12,12 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties({UserDataStorageConfigurationProperties.class})
+@EnableConfigurationProperties({EspoDataStorageConfigurationProperties.class})
 public class EspoStorageConfig {
 
     @Bean
-    public UserDataStorage userDataStorage(UserDataStorageConfigurationProperties config) {
-        return new CrmUserDataStorage(httpClient(), objectMapper(), config);
+    public UserDataStorage userDataStorage(EspoDataStorageConfigurationProperties config) {
+        return new EspoUserDataStorage(httpClient(), objectMapper(), config);
     }
 
     @Bean

@@ -5,7 +5,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated // TODO Добавить зависимость и навесить валидацию для полей.
 @ConfigurationProperties(prefix = "storage.user")
-public class UserDataStorageConfigurationProperties {
+public class EspoDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
     private String baseUrl;
 

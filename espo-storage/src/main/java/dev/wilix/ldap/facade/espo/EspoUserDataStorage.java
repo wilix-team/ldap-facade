@@ -7,7 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HttpHeaders;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.UserDataStorage;
-import dev.wilix.ldap.facade.espo.config.properties.UserDataStorageConfigurationProperties;
+import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +29,9 @@ import java.util.function.Function;
 /**
  * Хранилище пользователей, построенное на основе Wilix CRM.
  */
-public class CrmUserDataStorage implements UserDataStorage {
+public class EspoUserDataStorage implements UserDataStorage {
     // TODO Нужно добавить проверку у пользователей на флаг isActive
-    private final static Logger LOG = LoggerFactory.getLogger(CrmUserDataStorage.class);
+    private final static Logger LOG = LoggerFactory.getLogger(EspoUserDataStorage.class);
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -40,7 +40,7 @@ public class CrmUserDataStorage implements UserDataStorage {
     private final String searchUserUriTemplate;
     private final String authenticateUserUri;
 
-    public CrmUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, UserDataStorageConfigurationProperties config) {
+    public EspoUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, EspoDataStorageConfigurationProperties config) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         users = CacheBuilder.newBuilder()
