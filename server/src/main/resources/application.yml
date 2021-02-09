@@ -1,0 +1,9 @@
+listener:
+  port: 10636
+  sslEnabled: true
+  keyStorePath: C:\Users\Van\sandbox\certs\fck.keystore
+  keyStorePass: wilix1234
+
+storage.user:
+  cacheExpirationMinutes: 2
+  baseUrl: https://crm.wilix.org

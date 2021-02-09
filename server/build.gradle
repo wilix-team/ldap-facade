@@ -1,0 +1,38 @@
+plugins {
+    id 'org.springframework.boot' version '2.3.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id "com.palantir.docker" version "0.25.0"
+    id "com.palantir.docker-run" version "0.25.0"
+}
+
+description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
+
+dependencies {
+    implementation project(':api')
+    implementation project(':espo-storage')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '5.1.1'
+
+    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+docker {
+    name = "crm-ldap-facade:$version"
+    files(tasks.getByName("bootJar").outputs)
+    tag("version", "$version")
+    pull(true)
+    setDockerfile(file("Dockerfile"))
+}
+
+dockerRun {
+    name = rootProject.name
+    image = "crm-ldap-facade:$version"
+    ports("10636:10636")
+    env(['LISTENER_SSLENABLED':'false'])
+}

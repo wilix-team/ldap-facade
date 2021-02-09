@@ -1,2 +1,6 @@
-rootProject.name = 'crm-ldap-facade'
+rootProject.name = 'ldap-facade'
+
+include 'api'
+include 'server'
+include 'espo-storage'
 
