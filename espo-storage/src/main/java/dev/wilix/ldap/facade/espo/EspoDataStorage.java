@@ -6,7 +6,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HttpHeaders;
 import dev.wilix.ldap.facade.api.Authentication;
-import dev.wilix.ldap.facade.api.UserDataStorage;
+import dev.wilix.ldap.facade.api.DataStorage;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -29,9 +29,9 @@ import java.util.function.Function;
 /**
  * Хранилище пользователей, построенное на основе Wilix CRM.
  */
-public class EspoUserDataStorage implements UserDataStorage {
+public class EspoDataStorage implements DataStorage {
     // TODO Нужно добавить проверку у пользователей на флаг isActive
-    private final static Logger LOG = LoggerFactory.getLogger(EspoUserDataStorage.class);
+    private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -40,7 +40,7 @@ public class EspoUserDataStorage implements UserDataStorage {
     private final String searchUserUriTemplate;
     private final String authenticateUserUri;
 
-    public EspoUserDataStorage(HttpClient httpClient, ObjectMapper objectMapper, EspoDataStorageConfigurationProperties config) {
+    public EspoDataStorage(HttpClient httpClient, ObjectMapper objectMapper, EspoDataStorageConfigurationProperties config) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         users = CacheBuilder.newBuilder()
@@ -107,7 +107,7 @@ public class EspoUserDataStorage implements UserDataStorage {
     }
 
     @Override
-    public Map<String, List<String>> getInfo(String userName, Authentication authentication) {
+    public Map<String, List<String>> getSingleUserInfo(String userName, Authentication authentication) {
 
         if (!canSearch(authentication, userName)) {
             String message = String.format("Authentication %s can't access to search %s", authentication, userName);
@@ -122,6 +122,11 @@ public class EspoUserDataStorage implements UserDataStorage {
             }
         }
         return info;
+    }
+
+    @Override
+    public List<Map<String, List<String>>> getUserInfoByTemplate(String template, Authentication authentication) {
+        throw new IllegalStateException("Not implemented yet!");
     }
 
     private boolean canSearch(Authentication authentication, String username) {

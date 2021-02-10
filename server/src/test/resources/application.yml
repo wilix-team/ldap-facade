@@ -2,6 +2,14 @@ listener:
   port: 10636
   sslEnabled: false
 
+ldap:
+  servicesBaseDn: 'ou=services,dc=wilix,dc=dev'
+  usersBaseDn: 'ou=people,dc=wilix,dc=dev'
+  groupsBaseDn: 'ou=groups,dc=wilix,dc=dev'
+  userClassName: 'organizationalPerson' # TODO Посмотреть, какой сюда подставить.
+  groupClassName: 'groupOfNames'
+  mainNameAttribute: 'uid'
+
 storage.user:
   cacheExpirationMinutes: 2
   userDirectAuthUri: https://staff.wilix.org/red/api/sso/authenticate

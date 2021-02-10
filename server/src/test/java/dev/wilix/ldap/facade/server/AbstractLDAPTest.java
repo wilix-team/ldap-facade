@@ -10,7 +10,7 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
-import dev.wilix.ldap.facade.espo.EspoUserDataStorage;
+import dev.wilix.ldap.facade.espo.EspoDataStorage;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -190,7 +190,7 @@ public abstract class AbstractLDAPTest {
         String uriTemplate = "";
         try {
             // используем рефлексию, чтобы не потерять абстракцию
-            Method getSearchUserUriTemplateMethod = EspoUserDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
+            Method getSearchUserUriTemplateMethod = EspoDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
             getSearchUserUriTemplateMethod.setAccessible(true);
             uriTemplate = (String) getSearchUserUriTemplateMethod.invoke(null, "https://crm.wilix.org");
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
