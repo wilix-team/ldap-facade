@@ -43,4 +43,8 @@ public interface DataStorage {
      */
     List<Map<String, List<String>>> getUserInfoByTemplate(String template, Authentication authentication);
 
+    Map<String, List<String>> getSingleGroup(String groupName, Authentication authentication);
+
+    List<Map<String, List<String>>> getAllGroups(Authentication authentication);
+
 }
