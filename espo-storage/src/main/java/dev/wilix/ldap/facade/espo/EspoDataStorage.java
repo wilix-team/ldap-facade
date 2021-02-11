@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Хранилище пользователей, построенное на основе Wilix CRM.
@@ -37,7 +39,8 @@ public class EspoDataStorage implements DataStorage {
     private final ObjectMapper objectMapper;
     private final Cache<String, Map<String, List<String>>> users;
 
-    private final String searchUserUriTemplate;
+    private final String searchUserByLoginUriTemplate;
+    private final String searchUsersByPatternUriTemplate;
     private final String authenticateUserUri;
 
     public EspoDataStorage(HttpClient httpClient, ObjectMapper objectMapper, EspoDataStorageConfigurationProperties config) {
@@ -47,8 +50,16 @@ public class EspoDataStorage implements DataStorage {
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
 
-        searchUserUriTemplate = getSearchUserUriTemplate(config.getBaseUrl());
-        authenticateUserUri = config.getBaseUrl() + "/api/v1/App/user";
+        searchUserByLoginUriTemplate = getSearchUserUriTemplate(config.getBaseUrl());
+        // FIXME Сделать менее грязно.
+        searchUsersByPatternUriTemplate = searchUserByLoginUriTemplate.replace("equals", "like");
+
+        try {
+            authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
+        } catch (URISyntaxException e) {
+            LOG.debug("Problem with URIBuilder:", e);
+            throw new IllegalStateException("Problem with URIBuilder", e);
+        }
     }
 
     private static String getSearchUserUriTemplate(String baseUri) {
@@ -63,7 +74,7 @@ public class EspoDataStorage implements DataStorage {
             String searchUserUri = builder.build().toURL().toString();
             return java.net.URLDecoder.decode(searchUserUri, StandardCharsets.UTF_8);
         } catch (URISyntaxException | MalformedURLException e) {
-            LOG.debug("Problem with URIBuilder: {}", baseUri);
+            LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
         }
     }
@@ -116,7 +127,7 @@ public class EspoDataStorage implements DataStorage {
 
         Map<String, List<String>> info = users.getIfPresent(userName);
         if (info == null) {
-            info = searchUser(userName, authentication);
+            info = performUsersSearch(searchUserByLoginUriTemplate, userName, authentication).get(0);
             if (!info.isEmpty()) {
                 users.put(userName, info);
             }
@@ -126,7 +137,15 @@ public class EspoDataStorage implements DataStorage {
 
     @Override
     public List<Map<String, List<String>>> getUserInfoByTemplate(String template, Authentication authentication) {
-        throw new IllegalStateException("Not implemented yet!");
+        // '*' -> '%'(SQL syntax) -> '%25' (URL encoding)
+        String encodedTemplate = template.replace("*", "%25");
+
+        List<Map<String, List<String>>> foundedUsers = performUsersSearch(searchUsersByPatternUriTemplate, encodedTemplate, authentication);
+
+        // Кладем в кэш.
+        foundedUsers.forEach(user -> users.put(user.get("uid").get(0), user));
+
+        return foundedUsers;
     }
 
     private boolean canSearch(Authentication authentication, String username) {
@@ -147,7 +166,12 @@ public class EspoDataStorage implements DataStorage {
         final String base64Credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
 
-        return requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
+        List<Map<String, List<String>>> users = requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
+        if (users == null || users.isEmpty()) {
+            throw new IllegalStateException("Unexpected result from user authentication");
+        }
+
+        return users.get(0);
     }
 
     private Map<String, List<String>> authenticateWithServiceToken(String serviceName, String apiKey) {
@@ -155,16 +179,21 @@ public class EspoDataStorage implements DataStorage {
 
         requestBuilder.setHeader("X-Api-Key", apiKey);
 
-        return requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
+        List<Map<String, List<String>>> users = requestUserInfo(requestBuilder.build(), responseNode -> responseNode.get("user"));
+        if (users == null || users.isEmpty()) {
+            throw new IllegalStateException("Unexpected result from service authentication");
+        }
+
+        return users.get(0);
     }
 
     private HttpRequest.Builder prepareAuthenticateRequest() {
         return prepareBasicCrmRequest(authenticateUserUri);
     }
 
-    private Map<String, List<String>> searchUser(String userName, Authentication authentication) {
+    private List<Map<String, List<String>>> performUsersSearch(String url, String userName, Authentication authentication) {
 
-        HttpRequest.Builder request = prepareUserSearchRequest(userName);
+        HttpRequest.Builder request = prepareBasicCrmRequest(String.format(url, userName));
         if (authentication instanceof ServiceAuthentication) {
             String token = ((ServiceAuthentication) authentication).getToken();
             request.setHeader("X-Api-Key", token);
@@ -175,12 +204,7 @@ public class EspoDataStorage implements DataStorage {
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
         }
 
-        return requestUserInfo(request.build(), responseNode -> responseNode.get("list").get(0));
-    }
-
-    private HttpRequest.Builder prepareUserSearchRequest(String userName) {
-        return prepareBasicCrmRequest(
-                String.format(searchUserUriTemplate, userName));
+        return requestUserInfo(request.build(), responseNode -> responseNode.get("list"));
     }
 
     private HttpRequest.Builder prepareBasicCrmRequest(String requestUri) {
@@ -191,7 +215,7 @@ public class EspoDataStorage implements DataStorage {
                 .setHeader("Content-Type", "application/json; charset=utf-8");
     }
 
-    private Map<String, List<String>> requestUserInfo(HttpRequest request, Function<JsonNode, JsonNode> userNodeExtractor) {
+    private List<Map<String, List<String>>> requestUserInfo(HttpRequest request, Function<JsonNode, JsonNode> userNodeExtractor) {
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -217,7 +241,15 @@ public class EspoDataStorage implements DataStorage {
             JsonNode responseJsonNode = objectMapper.readTree(responseBody);
             JsonNode userJson = userNodeExtractor.apply(responseJsonNode);
 
-            return parseUserInfoInCrmFormatFromJsonNode(userJson);
+            // FIXME Почините меня, мне плохо.
+            if (userJson.isArray()) {
+                return StreamSupport.stream(userJson.spliterator(), false)
+                        .map(this::parseUserInfoInCrmFormatFromJsonNode)
+                        .collect(Collectors.toList());
+            } else {
+                return List.of(parseUserInfoInCrmFormatFromJsonNode(userJson));
+            }
+
         } catch (Exception e) {
             LOG.warn("Cant save {} info {}", request, response.body());
             throw new IllegalStateException("Can't properly parse CRM response.");
@@ -244,11 +276,8 @@ public class EspoDataStorage implements DataStorage {
 
             info.put("company", List.of("WILIX"));
 
-            // Вставляем разного рода идентификаторы, для пользуюзихся сервисов.
-            jsonToUserFieldSetter.accept("id", value -> info.put("entryuuid", List.of(value)));
-            jsonToUserFieldSetter.accept("objectguid", value -> info.put("objectguid", List.of(value)));
-            jsonToUserFieldSetter.accept("guid", value -> info.put("guid", List.of(value)));
-
+            // TODO Нужно формировать display name.
+            jsonToUserFieldSetter.accept("id", value -> info.put("id", List.of(value)));
             jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));

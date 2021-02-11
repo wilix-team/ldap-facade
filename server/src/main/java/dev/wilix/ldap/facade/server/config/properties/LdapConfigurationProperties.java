@@ -9,12 +9,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "ldap")
 public class LdapConfigurationProperties {
+    private String baseDn;
     private String servicesBaseDn;
     private String usersBaseDn;
     private String groupsBaseDn;
     private String userClassName;
     private String groupClassName;
     private String mainNameAttribute;
+
+    public String getBaseDn() {
+        return baseDn;
+    }
+
+    public void setBaseDn(String baseDn) {
+        this.baseDn = baseDn;
+    }
 
     public String getServicesBaseDn() {
         return servicesBaseDn;

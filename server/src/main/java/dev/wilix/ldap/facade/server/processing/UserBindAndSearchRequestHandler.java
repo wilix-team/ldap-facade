@@ -105,8 +105,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         try {
             foundedEntries = searchOperationProcessor.doSearch(authentication, request);
 
-            if (foundedEntries == null) {
-                throw new IllegalStateException("Unexpected null result from search.");
+            if (foundedEntries == null || foundedEntries.isEmpty()) {
+                throw new IllegalStateException("Unexpected empty result from search.");
             }
         } catch (LDAPException ex) {
             LOG.warn("End search operation [{}] with expected error: {}", request, ex);
