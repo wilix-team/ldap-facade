@@ -8,9 +8,8 @@ import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
-import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
-import dev.wilix.ldap.facade.espo.EspoUserDataStorage;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -41,6 +39,7 @@ public abstract class AbstractLDAPTest {
     EspoDataStorageConfigurationProperties userStorageConfig;
     @MockBean
     HttpClient httpClient;
+    // FIXME Не нужен тут, можно переработать и донести объявление до конкретных мест применения.
     @Mock
     HttpResponse<String> response;
 
@@ -130,9 +129,17 @@ public abstract class AbstractLDAPTest {
     }
 
     private void setupHttpClientForSearchResponse() throws IOException, InterruptedException {
+        //search users
         when(httpClient.send(
-                buildServiceSearchHttpRequest(), HttpResponse.BodyHandlers.ofString()))
+                buildUsersSearchHttpRequest(), HttpResponse.BodyHandlers.ofString()))
                 .thenReturn(response);
+        // search groups
+        HttpResponse<String> groupResponse = mock(HttpResponse.class);
+        when(groupResponse.statusCode()).thenReturn(200);
+        when(groupResponse.body()).thenReturn("{\"list\":[]}");
+        when(httpClient.send(
+                buildGroupsSearchHttpRequest(), HttpResponse.BodyHandlers.ofString()))
+                .thenReturn(groupResponse);
     }
 
     private void setupSuccessSearchResponseBody() {
@@ -185,19 +192,20 @@ public abstract class AbstractLDAPTest {
                 .build();
     }
 
-    private HttpRequest buildServiceSearchHttpRequest() {
+    private HttpRequest buildUsersSearchHttpRequest() {
+        String usersSearchUri = userStorageConfig.getBaseUrl() + "/api/v1/User?select=emailAddress%2CteamsIds";
+        URI uri = URI.create(usersSearchUri);
+        return HttpRequest.newBuilder()
+                .GET()
+                .uri(uri)
+                .setHeader("User-Agent", "ldap-facade")
+                .setHeader("Content-Type", "application/json; charset=utf-8")
+                .setHeader("X-Api-Key", TEST_PASS).build();
+    }
 
-        String uriTemplate = "";
-        try {
-            // используем рефлексию, чтобы не потерять абстракцию
-            Method getSearchUserUriTemplateMethod = EspoUserDataStorage.class.getDeclaredMethod("getSearchUserUriTemplate", String.class);
-            getSearchUserUriTemplateMethod.setAccessible(true);
-            uriTemplate = (String) getSearchUserUriTemplateMethod.invoke(null, "https://crm.wilix.org");
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-
-        URI uri = URI.create(String.format(uriTemplate, TEST_USER));
+    private HttpRequest buildGroupsSearchHttpRequest() {
+        String teamBaseUrl = userStorageConfig.getBaseUrl() + "/api/v1/Team";
+        URI uri = URI.create(teamBaseUrl);
         return HttpRequest.newBuilder()
                 .GET()
                 .uri(uri)

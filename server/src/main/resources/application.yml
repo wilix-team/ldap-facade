@@ -1,8 +1,17 @@
 listener:
   port: 10636
-  sslEnabled: true
+  sslEnabled: false
   keyStorePath: C:\Users\Van\sandbox\certs\fck.keystore
   keyStorePass: wilix1234
+
+ldap:
+  baseDn: 'dc=wilix,dc=dev'
+  servicesBaseDn: 'ou=services,dc=wilix,dc=dev'
+  usersBaseDn: 'ou=people,dc=wilix,dc=dev'
+  groupsBaseDn: 'ou=groups,dc=wilix,dc=dev'
+  userClassName: 'organizationalPerson'
+  groupClassName: 'groupOfNames'
+  mainNameAttribute: 'uid'
 
 storage.user:
   cacheExpirationMinutes: 2
