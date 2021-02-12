@@ -55,7 +55,7 @@ public class RequestHelper {
             return objectMapper.readTree(response.body());
         } catch (Exception e) {
             LOG.warn("Cant save {} info {}", request, response.body());
-            throw new IllegalStateException("Can't properly parse CRM response.");
+            throw new IllegalStateException("Can't properly parse CRM response.", e);
         }
     }
 
