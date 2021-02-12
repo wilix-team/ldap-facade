@@ -11,7 +11,11 @@ import dev.wilix.ldap.facade.api.DataStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -43,9 +47,9 @@ public class SearchOperationProcessor {
     List<SearchResultEntry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
 
         // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
-        List<SearchResultEntry> resultEntries1 = null;
+        List<SearchResultEntry> resultEntries1;
         try {
-            resultEntries1 = entitiesCache.get(authentication, () -> doSearchInternal(authentication, request).stream()
+            resultEntries1 = entitiesCache.get(authentication, () -> doSearchInternal(authentication).stream()
                     .map(info -> prepareSearchResultEntry(info.get("dn").get(0), info))
                     .collect(Collectors.toList()));
         } catch (ExecutionException e) {
@@ -69,7 +73,7 @@ public class SearchOperationProcessor {
         return resultEntries;
     }
 
-    private List<Map<String, List<String>>> doSearchInternal(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
+    private List<Map<String, List<String>>> doSearchInternal(Authentication authentication) {
         List<Map<String, List<String>>> result = new ArrayList<>();
 
         dataStorage.getAllUsers(authentication).stream()
