@@ -39,6 +39,7 @@ public abstract class AbstractLDAPTest {
     EspoDataStorageConfigurationProperties userStorageConfig;
     @MockBean
     HttpClient httpClient;
+    // FIXME Не нужен тут, можно переработать и донести объявление до конкретных мест применения.
     @Mock
     HttpResponse<String> response;
 
@@ -192,11 +193,8 @@ public abstract class AbstractLDAPTest {
     }
 
     private HttpRequest buildUsersSearchHttpRequest() {
-
-        String uriTemplate;
-        uriTemplate = userStorageConfig.getBaseUrl() + "/api/v1/User?select=emailAddress%2CteamsIds";
-
-        URI uri = URI.create(uriTemplate);
+        String usersSearchUri = userStorageConfig.getBaseUrl() + "/api/v1/User?select=emailAddress%2CteamsIds";
+        URI uri = URI.create(usersSearchUri);
         return HttpRequest.newBuilder()
                 .GET()
                 .uri(uri)
@@ -206,7 +204,6 @@ public abstract class AbstractLDAPTest {
     }
 
     private HttpRequest buildGroupsSearchHttpRequest() {
-
         String teamBaseUrl = userStorageConfig.getBaseUrl() + "/api/v1/Team";
         URI uri = URI.create(teamBaseUrl);
         return HttpRequest.newBuilder()

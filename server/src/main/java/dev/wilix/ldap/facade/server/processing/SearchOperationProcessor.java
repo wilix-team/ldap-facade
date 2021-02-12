@@ -47,20 +47,20 @@ public class SearchOperationProcessor {
     List<SearchResultEntry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
 
         // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
-        List<SearchResultEntry> resultEntries1;
+        List<SearchResultEntry> allEntries;
         try {
-            resultEntries1 = entitiesCache.get(authentication, () -> doSearchInternal(authentication).stream()
+            allEntries = entitiesCache.get(authentication, () -> doSearchInternal(authentication).stream()
                     .map(info -> prepareSearchResultEntry(info.get("dn").get(0), info))
                     .collect(Collectors.toList()));
         } catch (ExecutionException e) {
             throw new RuntimeException(e.getCause());
         }
 
-        List<SearchResultEntry> resultEntries = new ArrayList<>(resultEntries1.size());
+        List<SearchResultEntry> resultEntries = new ArrayList<>(allEntries.size());
 
         // FIXME Нужно как-то переработать, что-бы не отправлять лишние атрибуты.
         //       Но пока работает -_-
-        for (SearchResultEntry resultEntry : resultEntries1) {
+        for (SearchResultEntry resultEntry : allEntries) {
             // Фильтруем записи в соответствие с запросом.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
