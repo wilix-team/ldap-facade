@@ -40,7 +40,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         this(null, bindOperationProcessor, searchOperationProcessor);
     }
 
-    protected UserBindAndSearchRequestHandler(LDAPListenerClientConnection connection, BindOperationProcessor bindOperationProcessor,
+    protected UserBindAndSearchRequestHandler(LDAPListenerClientConnection connection,
+                                              BindOperationProcessor bindOperationProcessor,
                                               SearchOperationProcessor searchOperationProcessor) {
         this.connection = connection;
         this.bindOperationProcessor = bindOperationProcessor;
