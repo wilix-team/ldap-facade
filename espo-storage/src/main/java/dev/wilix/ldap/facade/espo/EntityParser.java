@@ -33,6 +33,7 @@ public class EntityParser {
 
             // TODO Нужно формировать display name.
             jsonToUserFieldSetter.accept("id", value -> info.put("id", List.of(value)));
+            jsonToUserFieldSetter.accept("id", value -> info.put("entryuuid", List.of(value)));
             jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
@@ -50,6 +51,35 @@ public class EntityParser {
             jsonToUserFieldSetter.accept("name", vcsName::add);
             jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
             info.put("vcsName", vcsName);
+        }
+
+        return info;
+    }
+
+    /**
+     * TODO Документация.
+     *
+     * @param groupJsonNode
+     * @return
+     */
+    static Map<String, List<String>> parseGroupInfo(JsonNode groupJsonNode) {
+        Map<String, List<String>> info = new HashMap<>();
+
+        if (groupJsonNode != null) {
+            // Приемник для корректной установки свойств пользователя из ответа сервера в свойства пользователя для ldap.
+            BiConsumer<String, Consumer<String>> jsonToUserFieldSetter = (fieldName, fieldSetter) -> {
+                JsonNode fieldNode = groupJsonNode.get(fieldName);
+                if (fieldNode != null) {
+                    fieldSetter.accept(fieldNode.asText());
+                }
+            };
+
+            jsonToUserFieldSetter.accept("id", value -> info.put("id", List.of(value)));
+            jsonToUserFieldSetter.accept("id", value -> info.put("primarygrouptoken", List.of(value)));
+            jsonToUserFieldSetter.accept("id", value -> info.put("gidnumber", List.of(value)));
+            jsonToUserFieldSetter.accept("id", value -> info.put("entryuuid", List.of(value)));
+            jsonToUserFieldSetter.accept("name", value -> info.put("uid", List.of(value)));
+            jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
         }
 
         return info;

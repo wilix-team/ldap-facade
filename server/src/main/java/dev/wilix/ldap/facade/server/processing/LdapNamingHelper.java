@@ -22,6 +22,7 @@ public class LdapNamingHelper {
     private final Pattern searchFilterToObjectClassNamePattern;
 
     private final String userNameToDnTemplate;
+    private final String groupNameToDnTemplate;
 
     public LdapNamingHelper(LdapConfigurationProperties ldapProperties) {
         this.ldapProperties = ldapProperties;
@@ -36,6 +37,7 @@ public class LdapNamingHelper {
         searchFilterToObjectClassNamePattern = Pattern.compile("\\(object[Cc]lass=(.+?)\\)"); // TODO Проверить.
 
         userNameToDnTemplate = mainNameAttr + "=%s," + ldapProperties.getUsersBaseDn();
+        groupNameToDnTemplate = mainNameAttr + "=%s," + ldapProperties.getGroupsBaseDn();
     }
 
     boolean isBaseDn(String dn) {
@@ -74,6 +76,10 @@ public class LdapNamingHelper {
         return firstGroupFromPattern(userEntryDnPattern, userDn);
     }
 
+    String extractGroupNameFromDn(String userDn) {
+        return firstGroupFromPattern(groupEntryDnPattern, userDn);
+    }
+
     String extractEntryNamePatternFromSearchFilter(String searchFilter) {
         return firstGroupFromPattern(searchFilterToEntryNamePattern, searchFilter);
     }
@@ -96,6 +102,22 @@ public class LdapNamingHelper {
         String userName = userEntry.get(ldapProperties.getMainNameAttribute()).get(0);
 
         return String.format(userNameToDnTemplate, userName);
+    }
+
+    String generateDnForUserEntryFromAttribute(String entryName) {
+        return String.format(userNameToDnTemplate, entryName);
+    }
+
+    String generateDnForGroupEntry(Map<String, List<String>> groupEntry) {
+
+        // FIXME Требуются проверки на корректные значения каждого промежуточного объекта.
+        String userName = groupEntry.get(ldapProperties.getMainNameAttribute()).get(0);
+
+        return String.format(groupNameToDnTemplate, userName);
+    }
+
+    String generateDnForGroupEntryFromAttribute(String entryName) {
+        return String.format(groupNameToDnTemplate, entryName);
     }
 
     private static String firstGroupFromPattern(Pattern regExpPattern, String valueToScan) {
