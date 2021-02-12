@@ -17,6 +17,8 @@ dependencies {
 
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
 
+    implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
+
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }

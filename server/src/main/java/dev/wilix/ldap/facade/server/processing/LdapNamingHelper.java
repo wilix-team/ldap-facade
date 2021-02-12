@@ -16,10 +16,6 @@ public class LdapNamingHelper {
 
     private final Pattern userEntryDnPattern;
     private final Pattern serviceEntryDnPattern;
-    private final Pattern groupEntryDnPattern;
-
-    private final Pattern searchFilterToEntryNamePattern;
-    private final Pattern searchFilterToObjectClassNamePattern;
 
     private final String userNameToDnTemplate;
     private final String groupNameToDnTemplate;
@@ -31,25 +27,9 @@ public class LdapNamingHelper {
         String mainNameAttr = ldapProperties.getMainNameAttribute();
         userEntryDnPattern = Pattern.compile(mainNameAttr + "=(.*)," + ldapProperties.getUsersBaseDn());
         serviceEntryDnPattern = Pattern.compile(mainNameAttr + "=(.*)," + ldapProperties.getServicesBaseDn());
-        groupEntryDnPattern = Pattern.compile(mainNameAttr + "=(.*)," + ldapProperties.getGroupsBaseDn());
-
-        searchFilterToEntryNamePattern = Pattern.compile("\\(" + ldapProperties.getMainNameAttribute() + "=(.+?)\\)");
-        searchFilterToObjectClassNamePattern = Pattern.compile("\\(object[Cc]lass=(.+?)\\)"); // TODO Проверить.
 
         userNameToDnTemplate = mainNameAttr + "=%s," + ldapProperties.getUsersBaseDn();
         groupNameToDnTemplate = mainNameAttr + "=%s," + ldapProperties.getGroupsBaseDn();
-    }
-
-    boolean isBaseDn(String dn) {
-        return ldapProperties.getBaseDn().equals(dn);
-    }
-
-    boolean isUsersBaseDn(String dn) {
-        return ldapProperties.getUsersBaseDn().equals(dn);
-    }
-
-    boolean isGroupBaseDn(String dn) {
-        return ldapProperties.getGroupsBaseDn().equals(dn);
     }
 
     boolean isUserDn(String dn) {
@@ -58,10 +38,6 @@ public class LdapNamingHelper {
 
     boolean isServiceDn(String dn) {
         return serviceEntryDnPattern.matcher(dn).matches();
-    }
-
-    boolean isGroupDn(String dn) {
-        return groupEntryDnPattern.matcher(dn).matches();
     }
 
     String getUserClassName() {
@@ -76,24 +52,8 @@ public class LdapNamingHelper {
         return firstGroupFromPattern(userEntryDnPattern, userDn);
     }
 
-    String extractGroupNameFromDn(String userDn) {
-        return firstGroupFromPattern(groupEntryDnPattern, userDn);
-    }
-
-    String extractEntryNamePatternFromSearchFilter(String searchFilter) {
-        return firstGroupFromPattern(searchFilterToEntryNamePattern, searchFilter);
-    }
-
-    String extractObjectClassNamePatternFromSearchFilter(String searchFilter) {
-        return firstGroupFromPattern(searchFilterToObjectClassNamePattern, searchFilter);
-    }
-
     String extractServiceNameFromDn(String serviceDn) {
         return firstGroupFromPattern(serviceEntryDnPattern, serviceDn);
-    }
-
-    boolean isWildcardPattern(String entryPattern) {
-        return entryPattern.contains("*");
     }
 
     String generateDnForUserEntry(Map<String, List<String>> userEntry) {
