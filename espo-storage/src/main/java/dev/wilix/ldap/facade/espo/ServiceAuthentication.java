@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Результат аутентификации сервисного аккаунта в CRM.
  */
-class ServiceAuthentication implements Authentication { // TODO toString
+class ServiceAuthentication implements Authentication {
     private String serviceName;
     private String token;
     private boolean isSuccess;
