@@ -10,6 +10,7 @@ ldap:
   userClassName: 'organizationalPerson' # TODO Посмотреть, какой сюда подставить.
   groupClassName: 'groupOfNames'
   mainNameAttribute: 'uid'
+  searchCacheExpirationMinutes: 0
 
 storage.user:
   cacheExpirationMinutes: 2
