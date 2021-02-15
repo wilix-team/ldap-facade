@@ -3,7 +3,6 @@ listener:
   sslEnabled: true
   keyStorePath: C:\Users\Van\sandbox\certs\fck.keystore
   keyStorePass: wilix1234
-  searchCacheExpirationMinutes: 10
 
 ldap:
   baseDn: 'dc=wilix,dc=dev'
@@ -13,6 +12,7 @@ ldap:
   userClassName: 'organizationalPerson'
   groupClassName: 'groupOfNames'
   mainNameAttribute: 'uid'
+  searchCacheExpirationMinutes: 10
 
 storage.user:
   cacheExpirationMinutes: 2
