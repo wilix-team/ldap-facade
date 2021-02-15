@@ -14,6 +14,8 @@ public class ServerConfigurationProperties {
      */
     private int port = 10389;
 
+    private int searchCacheExpirationMinutes = 10;
+
     private boolean sslEnabled = true;
 
     private String keyStorePath;
@@ -50,6 +52,14 @@ public class ServerConfigurationProperties {
 
     public void setKeyStorePass(String keyStorePass) {
         this.keyStorePass = keyStorePass;
+    }
+
+    public int getSearchCacheExpirationMinutes() {
+        return searchCacheExpirationMinutes;
+    }
+
+    public void setSearchCacheExpirationMinutes(int searchCacheExpirationMinutes) {
+        this.searchCacheExpirationMinutes = searchCacheExpirationMinutes;
     }
 
 }
