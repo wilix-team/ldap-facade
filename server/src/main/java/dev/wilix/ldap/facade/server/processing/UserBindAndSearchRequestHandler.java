@@ -71,7 +71,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
             // FIXME Возможно другое сообщение...
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.OTHER_INT_VALUE, null,
-                    "Unexpected errors occured!",
+                    "Unexpected errors occurred!",
                     null, null));
         }
 
