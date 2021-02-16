@@ -10,7 +10,6 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.controls.AuthorizationIdentityResponseControl;
 import com.unboundid.util.StaticUtils;
 import dev.wilix.ldap.facade.api.Authentication;
-import dev.wilix.ldap.facade.api.DataStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +71,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
             // FIXME Возможно другое сообщение...
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.OTHER_INT_VALUE, null,
-                    "Unexpected errors occured!",
+                    "Unexpected errors occurred!",
                     null, null));
         }
 

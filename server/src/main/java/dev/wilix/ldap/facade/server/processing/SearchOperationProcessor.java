@@ -34,13 +34,12 @@ public class SearchOperationProcessor {
 
     private final Cache<Authentication, List<SearchResultEntry>> entitiesCache;
 
-    public SearchOperationProcessor(DataStorage dataStorage, LdapNamingHelper namingHelper) {
+    public SearchOperationProcessor(DataStorage dataStorage, LdapNamingHelper namingHelper, int searchCacheExpirationMinutes) {
         this.dataStorage = dataStorage;
         this.namingHelper = namingHelper;
 
-        // FIXME Настройка.
         entitiesCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .expireAfterAccess(searchCacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
     }
 

@@ -16,6 +16,7 @@ public class LdapConfigurationProperties {
     private String userClassName;
     private String groupClassName;
     private String mainNameAttribute;
+    private int searchCacheExpirationMinutes = 10;
 
     public String getBaseDn() {
         return baseDn;
@@ -71,5 +72,13 @@ public class LdapConfigurationProperties {
 
     public void setMainNameAttribute(String mainNameAttribute) {
         this.mainNameAttribute = mainNameAttribute;
+    }
+
+    public int getSearchCacheExpirationMinutes() {
+        return searchCacheExpirationMinutes;
+    }
+
+    public void setSearchCacheExpirationMinutes(int searchCacheExpirationMinutes) {
+        this.searchCacheExpirationMinutes = searchCacheExpirationMinutes;
     }
 }

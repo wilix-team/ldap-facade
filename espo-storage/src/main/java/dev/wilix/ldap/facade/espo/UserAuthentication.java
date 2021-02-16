@@ -4,7 +4,7 @@ import dev.wilix.ldap.facade.api.Authentication;
 
 import java.util.Objects;
 
-class UserAuthentication implements Authentication { // TODO toString
+class UserAuthentication implements Authentication {
     private String userName;
     private String password;
     private boolean isSuccess;

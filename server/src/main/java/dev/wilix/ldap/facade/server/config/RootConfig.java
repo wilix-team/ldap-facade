@@ -78,7 +78,7 @@ public class RootConfig {
 
     @Bean
     public SearchOperationProcessor searchOperationProcessor(DataStorage dataStorage) {
-        return new SearchOperationProcessor(dataStorage, ldapNamingHelper());
+        return new SearchOperationProcessor(dataStorage, ldapNamingHelper(), ldapConfig.getSearchCacheExpirationMinutes());
     }
 
     @Bean
