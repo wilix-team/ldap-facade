@@ -6,6 +6,7 @@
       "name": "LDAP Admin",
       "userName": "admin",
       "isActive": true,
+      "phoneNumber": "+79181234567",
       "emailAddress": "admin@wilix.org"
     }
   ]
