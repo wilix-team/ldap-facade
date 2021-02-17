@@ -10,6 +10,7 @@ public interface DataStorage {
 
     /**
      * Прямая аутентификация пользователя.
+     *
      * @param userName Имя пользователя.
      * @param password Пароль пользователя.
      * @return Результат аутентификации.
@@ -26,8 +27,18 @@ public interface DataStorage {
 
     // TODO Написать документацию для методов.
 
+    /**
+     * Получение списка пользователей с группами
+     * @param authentication Имя сервисной записи.
+     * @return Результат поиска
+     */
     List<Map<String, List<String>>> getAllUsers(Authentication authentication);
 
+    /**
+     * Получение списка групп с пользователями
+     * @param authentication Имя сервисной записи.
+     * @return Результат поиска
+     */
     List<Map<String, List<String>>> getAllGroups(Authentication authentication);
 
 }
