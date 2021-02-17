@@ -36,6 +36,7 @@ public class EntityParser {
             jsonToUserFieldSetter.accept("id", value -> info.put("entryuuid", List.of(value)));
             jsonToUserFieldSetter.accept("userName", value -> info.put("uid", List.of(value)));
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
+            jsonToUserFieldSetter.accept("phoneNumber", value -> info.put("telephoneNumber", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
 
             List<String> memberOfList = new ArrayList<>();

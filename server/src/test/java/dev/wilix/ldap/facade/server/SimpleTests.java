@@ -46,6 +46,24 @@ public class SimpleTests extends AbstractLDAPTest {
     }
 
     @Test
+    public void bindAndSearchByAdminCheckEmptyAttributesTest() throws InterruptedException, LDAPException, IOException {
+        setupSuccessBindResponseBody(false);
+
+        BindResult bindResult;
+        SearchResult searchResult;
+        String[] allAttributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName"};
+
+        try (LDAPConnection ldap = openLDAP()) {
+            bindResult = performBind(ldap, generateServiceBindDN(), true);
+            searchResult = performSearch(ldap, SearchScope.ONE, TEST_USER, allAttributes);
+        }
+
+        LDAPTestUtils.assertResultCodeEquals(bindResult, ResultCode.SUCCESS);
+        LDAPTestUtils.assertResultCodeEquals(searchResult, ResultCode.SUCCESS);
+        searchResult.getSearchEntries().forEach(e -> checkSearchResultEntryAttributes(e, allAttributes));
+    }
+
+    @Test
     public void userBindTest() throws LDAPException, IOException, InterruptedException {
         setupSuccessBindResponseBody(false);
 
