@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server;
+package dev.wilix.ldap.facade.wilix.crm.facade;
 
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -7,7 +7,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
-import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
+import dev.wilix.ldap.facade.wilix.crm.facade.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
