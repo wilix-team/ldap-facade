@@ -3,11 +3,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
     id "com.palantir.docker" version "0.25.0"
     id "com.palantir.docker-run" version "0.25.0"
-    id "java" // or "java"
-    id "java-library" // or "java"
 }
-
-apply plugin: 'java'
 
 // todo
 description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
@@ -18,17 +14,15 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter'
 
-    testImplementation(testFixtures(project(":server")))
-    testImplementation(testFixtures(project(":espo-storage")))
+    // fixme https://stackoverflow.com/questions/5644011/multi-project-test-dependencies-with-gradle/60138176#60138176
+    // решение вида  testImplementation(testFixtures(project(":server"))) сразу не завелось
+    testImplementation 'org.springframework.boot:spring-boot-starter'
 
-//    compile project(':server')
-//    testCompile project(path: ':server')
-//
-//    compile project(':espo-storage')
-//    testCompile project(path: ':espo-storage')
-//
-//    testCompile project(':server').sourceSets.test.output
-//    testCompile project(':espo-storage').sourceSets.test.output
+    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '5.1.1'
+
+    testImplementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
+
+    testImplementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
@@ -47,11 +41,9 @@ docker {
     setDockerfile(file("Dockerfile"))
 }
 
-
 dockerRun {
     name = rootProject.name
     image = "crm-ldap-facade:$version"
     ports("10636:10636")
     env(['LISTENER_SSLENABLED': 'false'])
 }
-/////
