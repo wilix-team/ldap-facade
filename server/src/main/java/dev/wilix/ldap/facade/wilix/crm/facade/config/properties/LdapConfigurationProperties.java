@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server.config.properties;
+package dev.wilix.ldap.facade.wilix.crm.facade.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server.config;
+package dev.wilix.ldap.facade.wilix.crm.facade.config;
 
 import com.unboundid.ldap.listener.LDAPListener;
 import com.unboundid.ldap.listener.LDAPListenerConfig;
@@ -6,12 +6,12 @@ import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
 import com.unboundid.util.ssl.KeyStoreKeyManager;
 import com.unboundid.util.ssl.SSLUtil;
 import dev.wilix.ldap.facade.api.DataStorage;
-import dev.wilix.ldap.facade.server.config.properties.LdapConfigurationProperties;
-import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
-import dev.wilix.ldap.facade.server.processing.BindOperationProcessor;
-import dev.wilix.ldap.facade.server.processing.LdapNamingHelper;
-import dev.wilix.ldap.facade.server.processing.SearchOperationProcessor;
-import dev.wilix.ldap.facade.server.processing.UserBindAndSearchRequestHandler;
+import dev.wilix.ldap.facade.wilix.crm.facade.config.properties.LdapConfigurationProperties;
+import dev.wilix.ldap.facade.wilix.crm.facade.config.properties.ServerConfigurationProperties;
+import dev.wilix.ldap.facade.wilix.crm.facade.processing.BindOperationProcessor;
+import dev.wilix.ldap.facade.wilix.crm.facade.processing.LdapNamingHelper;
+import dev.wilix.ldap.facade.wilix.crm.facade.processing.SearchOperationProcessor;
+import dev.wilix.ldap.facade.wilix.crm.facade.processing.UserBindAndSearchRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
