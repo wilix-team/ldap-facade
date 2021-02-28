@@ -7,7 +7,8 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.JVMDefaultTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
-import dev.wilix.ldap.facade.wilix.crm.facade.config.properties.ServerConfigurationProperties;
+import dev.wilix.ldap.facade.server.Application;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 
 @Disabled("Disabled")
-@SpringBootTest
+@SpringBootTest(classes = Application.class)
 public class RealTest {
 
     @Autowired

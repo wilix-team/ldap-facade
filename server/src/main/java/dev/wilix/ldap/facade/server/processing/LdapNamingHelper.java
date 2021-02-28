@@ -1,6 +1,7 @@
-package dev.wilix.ldap.facade.wilix.crm.facade.processing;
+package dev.wilix.ldap.facade.server.processing;
 
-import dev.wilix.ldap.facade.wilix.crm.facade.config.properties.LdapConfigurationProperties;
+
+import dev.wilix.ldap.facade.server.config.properties.LdapConfigurationProperties;
 
 import java.util.List;
 import java.util.Map;

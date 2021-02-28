@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.wilix.crm.facade.processing;
+package dev.wilix.ldap.facade.server.processing;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

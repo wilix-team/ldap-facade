@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.wilix.crm.facade;
+package dev.wilix.ldap.facade.server;
 
 import com.unboundid.ldap.listener.LDAPListener;
 import org.slf4j.Logger;
