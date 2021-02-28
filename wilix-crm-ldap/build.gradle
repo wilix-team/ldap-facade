@@ -5,24 +5,15 @@ plugins {
     id "com.palantir.docker-run" version "0.25.0"
 }
 
-// todo
-description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
+description 'Компоновка библиотеки ldap сервера с реализацией коннектора к espo-crm. Используется как система аутентификации сотрудников.'
 
 dependencies {
     implementation project(':server')
     implementation project(':espo-storage')
 
-    implementation 'org.springframework.boot:spring-boot-starter'
-
-    // fixme https://stackoverflow.com/questions/5644011/multi-project-test-dependencies-with-gradle/60138176#60138176
-    // решение вида  testImplementation(testFixtures(project(":server"))) сразу не завелось
-    testImplementation 'org.springframework.boot:spring-boot-starter'
-
-    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '5.1.1'
-
-    testImplementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
-
-    testImplementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
+    // см. https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
+    testImplementation(testFixtures(project(":server")))
+    testImplementation(testFixtures(project(":espo-storage")))
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

@@ -7,6 +7,7 @@ version '1.0.0'
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'java-test-fixtures'
 
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11

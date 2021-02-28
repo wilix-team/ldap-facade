@@ -10,20 +10,20 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter'
 
+    // Дублирование определения зависимости делается для
+    // предоставления информации о ней для тестов в других модулях.
+    // см. https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
+
     implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '5.1.1'
+    testFixturesApi group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '5.1.1'
 
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
+    testFixturesApi group: 'org.apache.commons', name: 'commons-text', version: '1.9'
 
     implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
-
-    testImplementation('org.springframework.boot:spring-boot-starter-test') {
-        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-    }
+    testFixturesApi group: 'com.google.guava', name: 'guava', version: '30.0-jre'
 }
 
-jar {
-    enabled = true
-}
-bootJar {
-    enabled = false
-}
+// Предоставляем этот модуль только как библиотеку.
+jar { enabled = true }
+bootJar { enabled = false }
