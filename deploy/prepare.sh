@@ -15,6 +15,6 @@ mv ./isrgrootx1.pem.txt ./isrgrootx1.pem -f
 sudo cp  "${CERT_DIR}/privkey.pem"  "${WORK_DIR}/privkey.pem"
 sudo cp  "${CERT_DIR}/fullchain.pem"  "${WORK_DIR}/fullchain.pem"
 
-openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out "${WORK_DIR}/keystore.p12" -name auth.wilix.dev -CAfile "${WORK_DIR}/isrgrootx1.pem" -caname letsencrypt -passin pass:$KEY_PASS -passout pass:$KEY_PASS
+sudo openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out "${WORK_DIR}/keystore.p12" -name auth.wilix.dev -CAfile "${WORK_DIR}/isrgrootx1.pem" -caname letsencrypt -passin pass:$KEY_PASS -passout pass:$KEY_PASS
 
-keytool -importkeystore -deststorepass $KEY_PASS -destkeypass $KEY_PASS -destkeystore .keystore -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEY_PASS -alias auth.wilix.dev -noprompt
+sudo keytool -importkeystore -deststorepass $KEY_PASS -destkeypass $KEY_PASS -destkeystore .keystore -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEY_PASS -alias auth.wilix.dev -noprompt
