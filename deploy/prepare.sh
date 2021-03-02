@@ -8,8 +8,9 @@ export KEY_PASS=QAWSEDazsxdc321
 sudo certbot certonly -d $DOMAIN --nginx
 
 cd $WORK_DIR
-sudo wget https://letsencrypt.org/certs/isrgrootx1.pem.txt
-mv ./isrgrootx1.pem.txt ./isrgrootx1.pem -f
+
+sudo wget https://letsencrypt.org/certs/isrgrootx1.pem.txt \
+    --output-document isrgrootx1.pem
 
 sudo openssl pkcs12 -export -in "${CERT_DIR}/fullchain.pem"  \
           -inkey "${CERT_DIR}/privkey.pem" \
