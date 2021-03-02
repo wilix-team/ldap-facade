@@ -1,20 +1,27 @@
 #!/bin/bash
 
+export DOMAIN=auth.wilix.dev
 export WORK_DIR=/home/user/crm-ldap
-export CERT_DIR=/etc/letsencrypt/live/auth.wilix.dev
+export CERT_DIR="/etc/letsencrypt/live/${DOMAIN}"
 export KEY_PASS=QAWSEDazsxdc321
 
-# First you need to prepare certificate with certbot.
-# todo
-sudo certbot certonly -d  auth.wilix.dev   --nginx
+sudo certbot certonly -d $DOMAIN --nginx
 
 cd $WORK_DIR
 sudo wget https://letsencrypt.org/certs/isrgrootx1.pem.txt
 mv ./isrgrootx1.pem.txt ./isrgrootx1.pem -f
 
-sudo cp  "${CERT_DIR}/privkey.pem"  "${WORK_DIR}/privkey.pem"
-sudo cp  "${CERT_DIR}/fullchain.pem"  "${WORK_DIR}/fullchain.pem"
+sudo openssl pkcs12 -export -in "${CERT_DIR}/fullchain.pem"  \
+          -inkey "${CERT_DIR}/privkey.pem" \
+          -out "${WORK_DIR}/keystore.p12" \
+          -name $DOMAIN \
+          -CAfile "${WORK_DIR}/isrgrootx1.pem" \
+          -caname letsencrypt \
+          -passin pass:$KEY_PASS \
+          -passout pass:$KEY_PASS
 
-sudo openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out "${WORK_DIR}/keystore.p12" -name auth.wilix.dev -CAfile "${WORK_DIR}/isrgrootx1.pem" -caname letsencrypt -passin pass:$KEY_PASS -passout pass:$KEY_PASS
-
-sudo keytool -importkeystore -deststorepass $KEY_PASS -destkeypass $KEY_PASS -destkeystore .keystore -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEY_PASS -alias auth.wilix.dev -noprompt
+sudo keytool -importkeystore -deststorepass $KEY_PASS \
+      -destkeypass $KEY_PASS -destkeystore .keystore \
+      -srckeystore keystore.p12 -srcstoretype PKCS12 \
+      -srcstorepass $KEY_PASS \
+      -alias $DOMAIN -noprompt
