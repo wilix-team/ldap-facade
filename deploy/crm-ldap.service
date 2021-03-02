@@ -1,0 +1,11 @@
+[Unit]
+Description=LDAP gate for CRM
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/user/run.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
