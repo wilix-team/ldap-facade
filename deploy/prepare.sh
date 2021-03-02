@@ -1,12 +1,12 @@
 #!/bin/bash
 
 export WORK_DIR=/home/user/crm-ldap
-export CERT_DIR=/etc/letsencrypt/live/office.wilix.dev
+export CERT_DIR=/etc/letsencrypt/live/auth.wilix.dev
 export KEY_PASS=QAWSEDazsxdc321
 
 # First you need to prepare certificate with certbot.
 # todo
-sudo certbot certonly -d  office.wilix.dev   --nginx
+sudo certbot certonly -d  auth.wilix.dev   --nginx
 
 cd $WORK_DIR
 sudo wget https://letsencrypt.org/certs/isrgrootx1.pem.txt
