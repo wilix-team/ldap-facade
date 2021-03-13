@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server;
+package dev.wilix.ldap.facade.wilix.crm.facade;
 
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;

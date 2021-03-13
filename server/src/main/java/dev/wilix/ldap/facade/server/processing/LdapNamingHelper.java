@@ -1,5 +1,6 @@
 package dev.wilix.ldap.facade.server.processing;
 
+
 import dev.wilix.ldap.facade.server.config.properties.LdapConfigurationProperties;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package dev.wilix.ldap.facade.server;
+package dev.wilix.ldap.facade.wilix.crm.facade;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.BindResult;
@@ -9,6 +9,7 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
+import dev.wilix.ldap.facade.server.Application;
 import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
@@ -30,7 +31,7 @@ import java.util.Base64;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@SpringBootTest(classes = Application.class)
 public abstract class AbstractLDAPTest {
 
     @Autowired
