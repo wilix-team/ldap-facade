@@ -35,10 +35,6 @@ grandlew clean build docker
 docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 ```
 
-# Примерные настройки для клиента ldap аутентификации в youtrack
-
-![youtrack settings](images/youtrack-settings.png "YouTrack settings")
-
 #### Ограничения
 
 Существует ограничение на сложность фильтров в запросах на поиск записей.
@@ -49,7 +45,7 @@ docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 
 Для публикации библиотек в удалённый репозиторий и возможности их последующего подтягивания в другой проект необходимо в build.gradle корневого проекта добавить:
 
-1. Указать группу и версию. Например
+1. Указать группу и версию. Например:
 ```
 group 'dev.wilix.ldap-facade'
 version '1.0.0-SNAPSHOT'
@@ -75,12 +71,7 @@ publishing {
         }
         repositories {
             maven {
-                if (version.toString().endsWith("SNAPSHOT")) {
-                    url 'https://artifacts.wilix.dev/repository/maven-snapshots/'
-                }
-                else {
-                    url 'https://artifacts.wilix.dev/repository/maven-releases/'
-                }
+                url 'https://artifacts.wilix.dev/repository/maven-snapshots/'
                 credentials {
                     username "$mavenUser"
                     password "$mavenPassword"
@@ -89,11 +80,7 @@ publishing {
         }
     }
 ```
-6. Для выбора необходимых библиотек для публикации включить их в "settings.gradle". Например:
-```
-include 'server'
-```   
-7. Для публикации библиотек запустить задачу "publish".
+6. Для публикации библиотек запустить задачу "publish".
 
 ## Настройка загрузки внешних библиотек из удалённого Maven репозитория в проект
 
@@ -103,6 +90,10 @@ include 'server'
 repositories {
     maven {
         url 'https://artifacts.wilix.dev/repository/maven-snapshots/'
+        credentials {
+            username "$mavenUser"
+            password "$mavenPassword"
+        }
     }
     mavenCentral()
 }
