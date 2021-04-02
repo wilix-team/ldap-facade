@@ -43,62 +43,13 @@ docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 
 ## Настройка публикации библиотек в удалённый Maven репозиторий
 
-Для публикации библиотек в удалённый репозиторий и возможности их последующего подтягивания в другой проект необходимо в build.gradle корневого проекта добавить:
-
-1. Указать группу и версию. Например:
-```
-group 'dev.wilix.ldap-facade'
-version '1.0.0-SNAPSHOT'
-```
-2. Добавить в тела plugins и в subprojects плагин "maven-publish".
-3. В subprojects добавить получение версии и группы проекта.
-```
-group = rootProject.group
-version = rootProject.version
-```
-4. Добавить имя пользователя и пароль в файл настроек "gradle.properties", находящемся по пути "C:\Users\{userLocalName}\.gradle\".
+1. Для публикации библиотек в удалённый репозиторий и возможности их последующего подтягивания в другой проект необходимо в build.gradle корневого проекта добавить:
 ```
 mavenUser=someUsername
 mavenPassword=somePassword
 ```
-5. Добавить в subprojects задачу publishing, где в качестве url записывается путь к репозиторию, куда следует выложить библиотеки. 
+2. Обновить версию. Например:
 ```
-publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
-        }
-        repositories {
-            maven {
-                url 'https://artifacts.wilix.dev/repository/maven-snapshots/'
-                credentials {
-                    username "$mavenUser"
-                    password "$mavenPassword"
-                }
-            }
-        }
-    }
+version '1.0.0-SNAPSHOT'
 ```
-6. Для публикации библиотек запустить задачу "publish".
-
-## Настройка загрузки внешних библиотек из удалённого Maven репозитория в проект
-
-1. Добавить плагин "maven-publish".
-2. Указать репозиторий. Например:
-```
-repositories {
-    maven {
-        url 'https://artifacts.wilix.dev/repository/maven-snapshots/'
-        credentials {
-            username "$mavenUser"
-            password "$mavenPassword"
-        }
-    }
-    mavenCentral()
-}
-```
-3. Установить зависимости. Например:
-```
-    implementation group: 'dev.wilix.ldap-facade', name: 'server', version: '1.0.0-SNAPSHOT'
-```
+3. Для публикации библиотек запустить задачу "publish".

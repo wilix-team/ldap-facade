@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group 'dev.wilix.ldap-facade'
@@ -8,6 +9,10 @@ version '1.0.0'
 subprojects {
     apply plugin: 'java'
     apply plugin: 'java-test-fixtures'
+    apply plugin: 'maven-publish'
+
+    group = rootProject.group
+    version = rootProject.version
 
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -21,5 +26,24 @@ subprojects {
 
     test {
         useJUnitPlatform()
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+        repositories {
+            maven {
+                def releases = 'https://artifacts.wilix.dev/repository/maven-releases/'
+                def snapshots = 'https://artifacts.wilix.dev/repository/maven-snapshots/'
+                url = version.toString().endsWith("SNAPSHOT") ? snapshots : releases
+                credentials {
+                    username "$mavenUser"
+                    password "$mavenPassword"
+                }
+            }
+        }
     }
 }
