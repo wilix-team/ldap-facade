@@ -1,16 +1,26 @@
 listener:
-  port: 10636
-  sslEnabled: true
-  keyStorePath: C:\Users\Van\sandbox\certs\fck.keystore
-  keyStorePass: wilix1234
+  port: 636
+  # Указывает, использует ли сервер действительный сертификат.
+  sslEnabled: false
+  # Путь к хранилищу ключей сертификатов.
+  keyStorePath: \myPath\store.keystore
+  # Пароль от хранилища.
+  keyStorePass: password
 
 ldap:
-  baseDn: 'dc=wilix,dc=dev'
-  servicesBaseDn: 'ou=services,dc=wilix,dc=dev'
-  usersBaseDn: 'ou=people,dc=wilix,dc=dev'
-  groupsBaseDn: 'ou=groups,dc=wilix,dc=dev'
-  userClassName: 'organizationalPerson'
+  # Base DN, используемый в поиске LDAP.
+  baseDn: 'dc=example,dc=com'
+  # Base DN сервисов.
+  servicesBaseDn: 'ou=services,dc=example,dc=com'
+  # Base DN пользователей.
+  usersBaseDn: 'ou=people,dc=example,dc=com'
+  # Base DN групп.
+  groupsBaseDn: 'ou=groups,dc=example,dc=com'
+  # Класс объекта аутентифицируемого пользователя.
+  userClassName: 'EmsPerson'
+  # Класс объекта групп пользователей или групп безопасности.
   groupClassName: 'groupOfNames'
+  # Имя атрибута в модели пользователя LDAP.
   mainNameAttribute: 'uid'
   # Кеширование операций чтения пользователей и групп.
   # Происходит на уровне отдельного пользователя (для каждого пользователя свой набор сущностей).
@@ -18,5 +28,7 @@ ldap:
   searchCacheExpirationMinutes: 10
 
 storage.user:
+  # Указывает, как долго данные хранятся в кэше (в минутах).
   cacheExpirationMinutes: 2
-  baseUrl: https://crm.wilix.org
+  # Url-адрес службы хранения пользователей.
+  baseUrl: https://example.com
