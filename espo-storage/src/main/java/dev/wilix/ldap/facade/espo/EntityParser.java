@@ -38,6 +38,9 @@ public class EntityParser {
             jsonToUserFieldSetter.accept("name", value -> info.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("phoneNumber", value -> info.put("telephoneNumber", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> info.put("mail", List.of(value)));
+            jsonToUserFieldSetter.accept("firstName", value -> info.put("gn", List.of(value)));
+            jsonToUserFieldSetter.accept("lastName", value -> info.put("sn", List.of(value)));
+            jsonToUserFieldSetter.accept("isActive", value -> info.put("active", List.of(value)));
 
             List<String> memberOfList = new ArrayList<>();
             JsonNode teamsNamesNode = userJsonField.get("teamsNames");
