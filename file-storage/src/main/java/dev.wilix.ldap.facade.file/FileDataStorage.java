@@ -52,10 +52,7 @@ public class FileDataStorage implements DataStorage, Authentication {
             }
             if (watchKey != null) {
                 for (WatchEvent<?> event : watchKey.pollEvents()) {
-                    final Path changed = (Path) event.context();
-                    if (changed.endsWith("test.json")) {
-                        LOGGER.info("Event kind: " + event.kind() + " - for file: " + event.context());
-                    }
+                    LOGGER.info("Event kind: " + event.kind() + " - for file: " + event.context());
                 }
                 poll = watchKey.reset();
             }
