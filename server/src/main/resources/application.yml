@@ -27,8 +27,11 @@ ldap:
   # Значение '0' отключает кеширование.
   searchCacheExpirationMinutes: 10
 
-storage.user:
-  # Указывает, как долго данные хранятся в кэше (в минутах).
-  cacheExpirationMinutes: 2
-  # Url-адрес службы хранения пользователей.
-  baseUrl: https://example.com
+storage:
+  # Тип используемого хранилища пользователей
+  type: 'espo'
+  espo.user:
+    # Указывает, как долго данные хранятся в кэше (в минутах).
+    cacheExpirationMinutes: 2
+    # Url-адрес службы хранения пользователей.
+    baseUrl: https://example.com
