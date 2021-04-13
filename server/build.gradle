@@ -9,6 +9,7 @@ dependencies {
     implementation project(':api')
 
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation project(':espo-storage')
 
     // Дублирование определения зависимости делается для
     // предоставления информации о ней для тестов в других модулях.
