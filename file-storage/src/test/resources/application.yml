@@ -1,3 +1,2 @@
 storage.file:
-  #pathToFile: 'C:\Projects\Черновик\g\test.json'
-  pathToFile: './src/test/resources/test.json'
+  pathToFile: './src/test/resources/correct_users_and_groups_file.json'

@@ -3,9 +3,6 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
 }
 
-group 'dev.wilix.ldap-facade'
-version '1.0.0'
-
 repositories {
     mavenCentral()
 }
@@ -13,11 +10,10 @@ repositories {
 dependencies {
     implementation project(":api")
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.3'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
-        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+        exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
     }
 }
 

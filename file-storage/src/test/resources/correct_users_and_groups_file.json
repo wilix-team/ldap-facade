@@ -7,11 +7,6 @@
       "password": "password",
       "phoneNumber": 554611,
       "emailAddress": "addres@ad.ru",
-      "teamsNames": [
-        "test",
-        "test2",
-        "employee"
-      ],
       "name": "vcsName"
     },
     {
@@ -20,10 +15,6 @@
       "password": "password2",
       "phoneNumber": 22222,
       "emailAddress": "addres2@ad.ru",
-      "teamsNames": [
-        "test",
-        "test2"
-      ],
       "name": "vcsName2"
     }
   ],

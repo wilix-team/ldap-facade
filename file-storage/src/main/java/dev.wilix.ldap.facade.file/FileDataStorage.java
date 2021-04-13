@@ -9,6 +9,7 @@ import dev.wilix.ldap.facade.api.DataStorage;
 import dev.wilix.ldap.facade.file.config.properties.FileStorageConfigurationProperties;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -18,20 +19,21 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class FileDataStorage implements DataStorage, Authentication {
+public class FileDataStorage implements DataStorage {
     private final static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(FileDataStorage.class);
 
-    private String pathToFile;
+    private final String pathToFile;
+    private final ObjectMapper objectMapper;
+    private List<Map<String, List<String>>> users;
+    private List<Map<String, List<String>>> groups;
 
-    private boolean isSuccess;
-
-    public FileDataStorage(FileStorageConfigurationProperties config) {
+    public FileDataStorage(FileStorageConfigurationProperties config, ObjectMapper objectMapper) {
         this.pathToFile = config.getPathToFile();
+        this.objectMapper = objectMapper;
     }
 
     public void watchFileChanges() {
         WatchService watchService;
-        boolean poll = true;
         WatchKey watchKey;
 
         try {
@@ -40,50 +42,53 @@ public class FileDataStorage implements DataStorage, Authentication {
             Path directoryToFileWatching = pathToFileWatching.getParent();
             directoryToFileWatching.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
         } catch (IOException e) {
-            LOGGER.error("Problem with watching file:  " + e);
-            throw new IllegalStateException("Problem with watching file:  " + e);
+            LOGGER.error("Problem with watching file:  ", e);
+            throw new IllegalStateException("Problem with watching file:  ", e);
         }
 
+        boolean poll = true;
         while (poll) {
             try {
                 watchKey = watchService.take();
             } catch (InterruptedException e) {
-                throw new IllegalStateException("The operation was interrupted: " + e);
+                LOGGER.error("The operation was interrupted: ", e);
+                throw new IllegalStateException("The operation was interrupted: ", e);
             }
             if (watchKey != null) {
                 for (WatchEvent<?> event : watchKey.pollEvents()) {
                     LOGGER.info("Event kind: " + event.kind() + " - for file: " + event.context());
                 }
+                parseFile();
                 poll = watchKey.reset();
             }
         }
     }
 
+    @PostConstruct
+    public void postConstruct() {
+        parseFile();
+    }
+
+
     @Override
     public Authentication authenticateUser(String userName, String password) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readValue(Paths.get(pathToFile).toFile(), JsonNode.class);
-            JsonNode users = jsonNode.get("users");
-            System.out.println(users);
-            for (JsonNode user : users) {
-                if ((user.get("userName").asText().equals(userName) && user.get("password").asText().equals(password))) {
-                    return () -> true;
-                }
+        for (Map<String, List<String>> user : users) {
+            if (user.get("uid").get(0).equals(userName) && user.get("password").get(0).equals(password)) {
+                return Authentication.POSITIVE;
             }
-            return Authentication.NEGATIVE;
-
-        } catch (JsonParseException e) {
-            LOGGER.error("Errors received while running the parser: " + e);
-            return Authentication.NEGATIVE;
-        } catch (JsonMappingException e) {
-            LOGGER.error("Errors received while mapping json: " + e);
-            return Authentication.NEGATIVE;
-        } catch (IOException e) {
-            LOGGER.error("Errors received while trying to read the file: " + e);
-            return Authentication.NEGATIVE;
         }
+
+        return Authentication.NEGATIVE;
     }
+
+    /**
+     * Аутентификация сервисного аккаунта.
+     *
+     * В данном хранилище не используется сервисная аутентификация по причине того, что
+     * никакой запрос на сервер не отправляется, а пользовательская аутентификация проходит
+     * путём проверки наличия соответствующих логина и пароля пользователя в локальном файле формата json,
+     * содержащем исключительно данные пользователей и групп.
+     */
 
     @Override
     public Authentication authenticateService(String serviceName, String token) {
@@ -93,48 +98,42 @@ public class FileDataStorage implements DataStorage, Authentication {
     @Override
     public List<Map<String, List<String>>> getAllUsers(Authentication authentication) {
         if (authentication.isSuccess()) {
-            return performUsersSearch();
+            return users;
         }
-        return null;
+        throw new IllegalStateException("Access denied");
     }
 
     @Override
     public List<Map<String, List<String>>> getAllGroups(Authentication authentication) {
         if (authentication.isSuccess()) {
-            return performGroupsSearch();
+            return groups;
         }
-        return null;
+        throw new IllegalStateException("Access denied");
     }
 
-    @Override
-    public boolean isSuccess() {
-        return isSuccess;
-    }
-
-    public void setSuccess(boolean success) {
-        isSuccess = success;
-    }
-
-    private List<Map<String, List<String>>> performUsersSearch() {
+    private void parseFile() {
         try {
-            List<Map<String, List<String>>> listOfUsers = new ArrayList<>();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readValue(Paths.get(pathToFile).toFile(), JsonNode.class);
-            JsonNode users = jsonNode.get("users");
-            for (JsonNode user : users) {
-                listOfUsers.add(parseUserInfo(user));
-            }
-            return listOfUsers;
+            users = new ArrayList<>();
+            groups = new ArrayList<>();
+            JsonNode jsonNode = objectMapper.readValue(Paths.get(pathToFile).toFile(), JsonNode.class);
+            performGroupsSearch(jsonNode.get("groups"));
+            performUsersSearch(jsonNode.get("users"));
 
         } catch (JsonParseException e) {
-            LOGGER.error("Errors received while running the parser: " + e);
-            throw new RuntimeException("The input is not valid JSON: " + e);
+            LOGGER.error("Errors received while running the parser: ", e);
+            throw new IllegalStateException("The input is not valid JSON: ", e);
         } catch (JsonMappingException e) {
-            LOGGER.error("Errors received while mapping json: " + e);
-            throw new RuntimeException("Error mapping JSON: " + e);
+            LOGGER.error("Errors received while mapping json: ", e);
+            throw new IllegalStateException("Error mapping JSON: ", e);
         } catch (IOException e) {
-            LOGGER.error("Errors received while trying to read the file: " + e);
-            throw new IllegalStateException("Errors received while trying to read the file: " + e);
+            LOGGER.error("Errors received while trying to read the file: ", e);
+            throw new IllegalStateException("Errors received while trying to read the file: ", e);
+        }
+    }
+
+    private void performUsersSearch(JsonNode usersNode) {
+        for (JsonNode userNode : usersNode) {
+            users.add(parseUserInfo(userNode));
         }
     }
 
@@ -156,13 +155,16 @@ public class FileDataStorage implements DataStorage, Authentication {
             jsonToUserFieldSetter.accept("name", value -> usersInfo.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("phoneNumber", value -> usersInfo.put("telephoneNumber", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> usersInfo.put("mail", List.of(value)));
+            jsonToUserFieldSetter.accept("password", value -> usersInfo.put("password", List.of(value)));
 
             List<String> memberOfList = new ArrayList<>();
-            JsonNode teamsNamesNode = user.get("teamsNames");
-            if (teamsNamesNode != null) {
-                teamsNamesNode.elements()
-                        .forEachRemaining((teamNameNode) -> memberOfList.add(teamNameNode.textValue()));
+
+            for (Map<String, List<String>> group : groups) {
+                if (group.get("member").contains(user.get("userName").asText())) {
+                    memberOfList.add(group.get("uid").get(0));
+                }
             }
+
             usersInfo.put("memberof", memberOfList);
 
             List<String> vcsName = new ArrayList<>(2);
@@ -173,26 +175,9 @@ public class FileDataStorage implements DataStorage, Authentication {
         return usersInfo;
     }
 
-    private List<Map<String, List<String>>> performGroupsSearch() {
-        try {
-            List<Map<String, List<String>>> listOfGroups = new ArrayList<>();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readValue(Paths.get(pathToFile).toFile(), JsonNode.class);
-            JsonNode groups = jsonNode.get("groups");
-            for (JsonNode group : groups) {
-                listOfGroups.add(parseGroupInfo(group));
-            }
-            return listOfGroups;
-
-        } catch (JsonParseException e) {
-            LOGGER.error("Errors received while running the parser: " + e);
-            throw new RuntimeException("The input is not valid JSON: " + e);
-        } catch (JsonMappingException e) {
-            LOGGER.error("Errors received while mapping json: " + e);
-            throw new RuntimeException("Error mapping JSON: " + e);
-        } catch (IOException e) {
-            LOGGER.error("Errors received while trying to read the file: " + e);
-            throw new IllegalStateException("Errors received while trying to read the file: " + e);
+    private void performGroupsSearch(JsonNode groupsNode) {
+        for (JsonNode groupNode : groupsNode) {
+            groups.add(parseGroupInfo(groupNode));
         }
     }
 
@@ -206,6 +191,7 @@ public class FileDataStorage implements DataStorage, Authentication {
                     fieldSetter.accept(fieldNode.asText());
                 }
             };
+
             jsonToUserFieldSetter.accept("id", value -> info.put("id", List.of(value)));
             jsonToUserFieldSetter.accept("id", value -> info.put("primarygrouptoken", List.of(value)));
             jsonToUserFieldSetter.accept("id", value -> info.put("gidnumber", List.of(value)));
@@ -215,10 +201,12 @@ public class FileDataStorage implements DataStorage, Authentication {
 
             List<String> memberOfList = new ArrayList<>();
             JsonNode membersNode = group.get("member");
+
             if (membersNode != null) {
                 membersNode.elements()
                         .forEachRemaining((memberNode) -> memberOfList.add(memberNode.textValue()));
             }
+
             info.put("member", memberOfList);
         }
         return info;

@@ -11,5 +11,12 @@ public interface Authentication {
         }
     };
 
+    Authentication POSITIVE = new Authentication() {
+        @Override
+        public boolean isSuccess() {
+            return true;
+        }
+    };
+
     boolean isSuccess();
 }
