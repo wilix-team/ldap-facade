@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'dev.wilix.ldap-facade'
-version '1.0.0'
+version '2.0.0-SNAPSHOT'
 
 subprojects {
     apply plugin: 'java'
@@ -29,11 +29,6 @@ subprojects {
     }
 
     publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
-        }
         repositories {
             maven {
                 def releases = 'https://artifacts.wilix.dev/repository/maven-releases/'

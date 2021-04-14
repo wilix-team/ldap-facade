@@ -10,6 +10,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter'
 
+    // Хранилища
+    implementation project(':espo-storage')
+
     // Дублирование определения зависимости делается для
     // предоставления информации о ней для тестов в других модулях.
     // см. https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
@@ -24,6 +27,18 @@ dependencies {
     testFixturesApi group: 'com.google.guava', name: 'guava', version: '30.0-jre'
 }
 
-// Предоставляем этот модуль только как библиотеку.
-jar { enabled = true }
-bootJar { enabled = false }
+jar {
+    enabled = true
+}
+
+bootJar {
+    classifier = 'boot'
+}
+publishing {
+    publications {
+        bootJava(MavenPublication) {
+            artifact bootJar
+            from components.java
+        }
+    }
+}
