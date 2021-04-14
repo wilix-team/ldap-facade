@@ -1,1 +1,9 @@
 project.description 'Основное внешнее api для реализации источников данных для ldap'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

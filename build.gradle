@@ -29,11 +29,6 @@ subprojects {
     }
 
     publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
-        }
         repositories {
             maven {
                 def releases = 'https://artifacts.wilix.dev/repository/maven-releases/'
