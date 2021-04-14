@@ -9,6 +9,8 @@ dependencies {
     implementation project(':api')
 
     implementation 'org.springframework.boot:spring-boot-starter'
+
+    // Хранилища
     implementation project(':espo-storage')
 
     // Дублирование определения зависимости делается для
@@ -24,7 +26,3 @@ dependencies {
     implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
     testFixturesApi group: 'com.google.guava', name: 'guava', version: '30.0-jre'
 }
-
-// Предоставляем этот модуль только как библиотеку.
-jar { enabled = true }
-bootJar { enabled = false }
