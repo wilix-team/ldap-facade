@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated // TODO Добавить зависимость и навесить валидацию для полей.
-@ConfigurationProperties(prefix = "storage.user")
+@ConfigurationProperties(prefix = "storage.espo")
 public class EspoDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
     private String baseUrl;
