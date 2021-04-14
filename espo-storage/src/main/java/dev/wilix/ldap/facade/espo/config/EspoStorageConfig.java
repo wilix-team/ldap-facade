@@ -21,6 +21,8 @@ import dev.wilix.ldap.facade.api.DataStorage;
 import dev.wilix.ldap.facade.espo.EspoDataStorage;
 import dev.wilix.ldap.facade.espo.RequestHelper;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +32,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties({EspoDataStorageConfigurationProperties.class})
+@ConditionalOnProperty(prefix = "storage", name = "type", havingValue = "espo")
 public class EspoStorageConfig {
 
     @Bean
@@ -51,6 +54,7 @@ public class EspoStorageConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
