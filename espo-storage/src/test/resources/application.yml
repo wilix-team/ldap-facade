@@ -1,0 +1,6 @@
+storage:
+  # Тип используемого хранилища пользователей
+  type: 'espo'
+  espo:
+    cacheExpirationMinutes: 0 # кэш отключён для тестирования
+    baseUrl: http://localhost:8080 # смотрит на wireMock

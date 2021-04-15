@@ -1,0 +1,45 @@
+{
+  "total": "2",
+  "list": [
+    {
+      "id": "1",
+      "name": "First Second",
+      "userName": "username1",
+      "salutationName": "",
+      "firstName": "First",
+      "lastName": "Second",
+      "emailAddress": "address@ad.ru",
+      "middleName": "Middle",
+      "phoneNumber": "658437",
+      "isActive": true,
+      "teamsIds": [
+        "1g",
+        "2g"
+      ],
+      "teamsNames": {
+        "1g": "Employee",
+        "2g": "Test"
+      },
+      "createdById": "system"
+    },
+    {
+      "id": "2",
+      "name": "FirstTwo SecondTwo",
+      "userName": "username2",
+      "salutationName": "",
+      "firstName": "FirstTwo",
+      "lastName": "SecondTwo",
+      "emailAddress": "address2@ad.ru",
+      "middleName": "MiddleTwo",
+      "phoneNumber": "88005553535",
+      "isActive": true,
+      "teamsIds": [
+        "1g"
+      ],
+      "teamsNames": {
+        "1g": "Employee"
+      },
+      "createdById": "system"
+    }
+  ]
+}
