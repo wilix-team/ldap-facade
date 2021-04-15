@@ -13,6 +13,15 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
+    testImplementation group: 'org.springframework', name: 'spring-web', version: '5.2.2.RELEASE'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 jar {
