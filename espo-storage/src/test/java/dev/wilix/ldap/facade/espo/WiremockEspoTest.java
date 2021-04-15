@@ -32,7 +32,8 @@ public class WiremockEspoTest {
     public static final String DEFAULT_SERVICE_NAME = "serviceName";
     public static final String DEFAULT_SERVICE_TOKEN = "token";
 
-    private final String USERS_AND_GROUPS_INFO_BODY_FILE_PATH = "users_and_groups_info.json";
+    private final String USERS_INFO_BODY_FILE_PATH = "users_info.json";
+    private final String GROUPS_INFO_BODY_FILE_PATH = "groups_info.json";
     private final String USER_INFO_SUCCESS_BODY_FILE_PATH = "user_info.json";
     private final String BROKEN_JSON_BODY_FILE_PATH = "broken_format.json";
 
@@ -133,7 +134,7 @@ public class WiremockEspoTest {
 
     @Test
     public void positiveReceiveUsersInfoWithUserAuth() {
-        stubMappingWithUserAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
         List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(buildUserAuthentication());
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "gn", "sn", "active", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
@@ -142,7 +143,7 @@ public class WiremockEspoTest {
 
     @Test
     public void positiveReceiveUsersInfoWithServiceAuth() {
-        stubMappingWithServiceAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
         List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(buildServiceAuthentication());
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "gn", "sn", "active", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
@@ -151,8 +152,8 @@ public class WiremockEspoTest {
 
     @Test
     public void positiveReceiveGroupsInfoWithUserAuth() {
-        stubMappingWithUserAuth(GROUPS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
-        stubMappingWithUserAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithUserAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
         List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(buildUserAuthentication());
         String[] attributes = {"id", "primarygrouptoken", "gidnumber", "entryuuid", "uid", "cn"};
         groupsInfo.forEach(e -> checkAttributes(e, attributes));
@@ -161,8 +162,8 @@ public class WiremockEspoTest {
 
     @Test
     public void positiveReceiveGroupsInfoWithServiceAuth() {
-        stubMappingWithServiceAuth(GROUPS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
-        stubMappingWithServiceAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithServiceAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
         List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(buildServiceAuthentication());
         String[] attributes = {"id", "primarygrouptoken", "gidnumber", "entryuuid", "uid", "cn"};
         groupsInfo.forEach(e -> checkAttributes(e, attributes));
@@ -171,14 +172,14 @@ public class WiremockEspoTest {
 
     @Test
     public void negativeReceiveUsersInfoBecauseWrongUserAuth() {
-        stubMappingWithUserAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
+        stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllUsers(buildUserAuthentication()));
         checkRequest(1, USERS_SEARCH_INFO_URI);
     }
 
     @Test
     public void negativeReceiveUsersInfoBecauseWrongServiceAuth() {
-        stubMappingWithServiceAuth(USERS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
+        stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllUsers(buildServiceAuthentication()));
         wireMockServer.verify(1, allRequests());
         checkRequest(1, USERS_SEARCH_INFO_URI);
@@ -186,14 +187,14 @@ public class WiremockEspoTest {
 
     @Test
     public void negativeReceiveGroupsInfoBecauseWrongUserAuth() {
-        stubMappingWithUserAuth(GROUPS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
+        stubMappingWithUserAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllGroups(buildUserAuthentication()));
         checkRequest(1, GROUPS_URI);
     }
 
     @Test
     public void negativeReceiveGroupsInfoBecauseWrongServiceAuth() {
-        stubMappingWithServiceAuth(GROUPS_URI, USERS_AND_GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
+        stubMappingWithServiceAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllGroups(buildServiceAuthentication()));
         checkRequest(1, GROUPS_URI);
     }

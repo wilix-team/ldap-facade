@@ -1,0 +1,21 @@
+{
+  "total": 1,
+  "list": [
+    {
+      "id": "1g",
+      "name": "Employee",
+      "deleted": false,
+      "positionList": [
+        "Student",
+        "Intern",
+        "Developer",
+        "Lead",
+        "PRO"
+      ],
+      "createdAt": "2018-01-15 10:14:25",
+      "modifiedAt": "2019-05-23 12:36:42",
+      "layoutSetId": null,
+      "layoutSetName": null
+    }
+  ]
+}
