@@ -9,12 +9,12 @@ dependencies {
     implementation project(":api")
     implementation 'org.springframework.boot:spring-boot-starter'
 
-    implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
-    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.9'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
-    testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.27.2'
-    testImplementation group: 'org.springframework', name: 'spring-web', version: '5.2.2.RELEASE'
+    implementation 'com.google.guava:guava:30.0-jre'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.3'
+    implementation 'org.apache.commons:commons-text:1.9'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    testImplementation 'com.github.tomakehurst:wiremock:2.27.2'
+    testImplementation 'org.springframework:spring-web:5.2.2.RELEASE'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }

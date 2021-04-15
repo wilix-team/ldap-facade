@@ -2,7 +2,5 @@ storage:
   # Тип используемого хранилища пользователей
   type: 'espo'
   espo:
-    # Указывает, как долго данные хранятся в кэше (в минутах).
-    cacheExpirationMinutes: 0
-    # Url-адрес службы хранения пользователей.
-    baseUrl: http://localhost:8080
+    cacheExpirationMinutes: 0 # кэш отключён для тестирования
+    baseUrl: http://localhost:8080 # смотрит на wireMock
