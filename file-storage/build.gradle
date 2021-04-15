@@ -28,3 +28,11 @@ jar {
 bootJar {
     enabled = false
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
