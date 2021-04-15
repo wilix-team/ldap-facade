@@ -37,5 +37,5 @@ storage:
     baseUrl: https://example.com
 
   file:
-    cacheExpirationMinutes: 0
-    baseUrl: https://example.com
+    # Указывает путь к файлу json, в котором хранятся данные о пользователях и группах.
+    pathToFile:
