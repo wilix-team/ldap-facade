@@ -34,4 +34,5 @@ storage:
     # Указывает, как долго данные хранятся в кэше (в минутах).
     cacheExpirationMinutes: 2
     # Url-адрес службы хранения пользователей.
-    baseUrl: https://example.com
+    # baseUrl: https://example.com
+    baseUrl: 
