@@ -1,0 +1,47 @@
+{
+  "users":
+  [
+    {
+      "id": 1,
+      "userName": "username",
+      "password": "password",
+      "phoneNumber": 554611,
+      "emailAddress": "addres@ad.ru",
+      "name": "vcsName"
+    },
+    {
+      "id": 2,
+      "userName": "username2",
+      "password": "password2",
+      "phoneNumber": 22222,
+      "emailAddress": "addres2@ad.ru",
+      "name": "vcsName2"
+    }
+  ],
+  "groups":
+  [
+    {
+      "id": 1,
+      "name": "test",
+      "member": [
+        "username",
+        "username2"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "test2",
+      "member": [
+        "username",
+        "username2"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "employee",
+      "member": [
+        "username"
+      ]
+    }
+  ]
+}
