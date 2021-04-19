@@ -19,10 +19,14 @@ package dev.wilix.ldap.facade.espo.config.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.NotEmpty;
+
 @Validated // TODO Добавить зависимость и навесить валидацию для полей.
 @ConfigurationProperties(prefix = "storage.espo")
 public class EspoDataStorageConfigurationProperties {
     private int cacheExpirationMinutes = 2;
+
+    @NotEmpty
     private String baseUrl;
 
     public int getCacheExpirationMinutes() {
