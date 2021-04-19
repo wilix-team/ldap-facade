@@ -10,7 +10,7 @@ import java.util.Map;
  * информации пользователей и групп.
  */
 
-public class ParseResult {
+class ParseResult {
     private final List<Map<String, List<String>>> users;
     private final List<Map<String, List<String>>> groups;
 

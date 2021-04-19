@@ -1,8 +1,6 @@
 package dev.wilix.ldap.facade.file;
 
-import dev.wilix.ldap.facade.file.config.properties.FileStorageConfigurationProperties;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -16,46 +14,38 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
+/**
+ * Класс для отслеживания изменений в каком-либо файле.
+ */
 public class FileWatcher {
     private final static Logger LOGGER = LoggerFactory.getLogger(FileWatcher.class);
+
     private final Path pathToFile;
     private final int fileWatchInterval;
     private final Consumer<String> fileContentListener;
     private final String fileName;
 
-    public FileWatcher(FileStorageConfigurationProperties config, Consumer<String> fileContentListener) {
-        this.pathToFile = config.getPathToFile();
-        this.fileWatchInterval = config.getFileWatchInterval();
-        this.fileContentListener = fileContentListener;
-        this.fileName = pathToFile.getFileName().toString();
-    }
-
-    public void watchFileChanges() {
-        IOFileFilter filter = createFilter();
-        FileAlterationObserver observer = createObserver(filter);
-        watch(observer);
-    }
-
-    private IOFileFilter createFilter() {
-        IOFileFilter directories = FileFilterUtils.and(
-                FileFilterUtils.directoryFileFilter(),
-                HiddenFileFilter.VISIBLE);
-
-        IOFileFilter files = FileFilterUtils.and(
-                FileFilterUtils.fileFileFilter(),
-                FileFilterUtils.suffixFileFilter(fileName));
-
-        return FileFilterUtils.or(directories, files);
-    }
-
-    private FileAlterationObserver createObserver(IOFileFilter filter) {
-        File fileWatched = pathToFile.toFile();
-        if (!fileWatched.exists()) {
+    public FileWatcher(Path pathToFile, int watchIntervalMillis, Consumer<String> fileContentListener) {
+        if ( ! Files.exists(pathToFile)) {
             throw new IllegalStateException("File at the specified path does not exist.");
         }
 
-        String directory = fileWatched.getParent();
-        FileAlterationObserver observer = new FileAlterationObserver(directory, filter);
+        this.pathToFile = pathToFile;
+        this.fileWatchInterval = watchIntervalMillis;
+        this.fileContentListener = fileContentListener;
+        this.fileName = pathToFile.getFileName().toString(); // TODO Рассмотреть возможность удаления этого поля.
+    }
+
+    public void watchFileChanges() {
+        watch(createObserver());
+    }
+
+    /**
+     * Подготовка "отслеживателя" для файла.
+     */
+    private FileAlterationObserver createObserver() {
+        String directory = pathToFile.getParent().toString();
+        FileAlterationObserver observer = new FileAlterationObserver(directory, createFilter());
         observer.addListener(new FileAlterationListenerAdaptor() {
             @Override
             public void onStart(FileAlterationObserver observer) {
@@ -65,22 +55,35 @@ public class FileWatcher {
             @Override
             public void onFileChange(File file) {
                 LOGGER.info("Receive file " + fileName + " change event.");
-                processChangeEvent();
+                FileWatcher.this.processChangeEvent();
             }
 
-            private void processChangeEvent() {
-                String fileContent = null;
-                try {
-                    fileContent = Files.readString(pathToFile);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Can't read watched wile!", e);
-                }
-                fileContentListener.accept(fileContent);
-            }
         });
         return observer;
     }
 
+    private IOFileFilter createFilter() {
+        return FileFilterUtils.and(
+                FileFilterUtils.fileFileFilter(),
+                FileFilterUtils.suffixFileFilter(fileName));
+    }
+
+    /**
+     * Обработка события изменения файла.
+     */
+    private void processChangeEvent() {
+        String fileContent;
+        try {
+            fileContent = Files.readString(pathToFile);
+        } catch (IOException e) {
+            throw new IllegalStateException("Can't read watched wile!", e);
+        }
+        fileContentListener.accept(fileContent);
+    }
+
+    /**
+     * Запуск отслеживания файла.
+     */
     private void watch(FileAlterationObserver observer){
         FileAlterationMonitor monitor = new FileAlterationMonitor(fileWatchInterval, observer);
 

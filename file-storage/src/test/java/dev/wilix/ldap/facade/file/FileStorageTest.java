@@ -141,7 +141,7 @@ public class FileStorageTest {
         FileStorageConfigurationProperties config = new FileStorageConfigurationProperties();
         config.setPathToFile(Path.of(FILE_FOR_CHANGING_CHECK));
 
-        FileWatcher fileWatcher = new FileWatcher(config, fileDataStorage::performParse);
+        FileWatcher fileWatcher = new FileWatcher(config.getPathToFile(), config.getFileWatchInterval(), fileDataStorage::performParse);
         fileWatcher.watchFileChanges();
 
         FileWriter writer = new FileWriter(FILE_FOR_CHANGING_CHECK);
@@ -154,8 +154,7 @@ public class FileStorageTest {
         FileStorageConfigurationProperties config = new FileStorageConfigurationProperties();
         config.setPathToFile(Path.of(WRONG_PATH_TO_FILE));
 
-        FileWatcher fileWatcher = new FileWatcher(config, fileDataStorage::performParse);
-        assertThrows(IllegalStateException.class, fileWatcher::watchFileChanges);
+        assertThrows(IllegalStateException.class, () -> new FileWatcher(config.getPathToFile(), config.getFileWatchInterval(), fileDataStorage::performParse));
     }
 
     private void checkAttributes(Map<String, List<String>> e, String... attributes) {

@@ -10,6 +10,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Реализация хранилища пользователей и групп на основе файла.
+ */
 public class FileDataStorage implements DataStorage {
 
     private final FileParser fileParser;
@@ -19,10 +22,8 @@ public class FileDataStorage implements DataStorage {
     private List<Map<String, List<String>>> groups;
     private Map<String, String> usersPasswordInfo;
 
-    public FileDataStorage(ParseResult initialState, FileParser fileParser) {
+    public FileDataStorage(FileParser fileParser) {
         this.fileParser = fileParser;
-        this.users = initialState.getUsers();
-        this.groups = initialState.getGroups();
     }
 
     public void performParse(String fileContent) {
@@ -35,7 +36,10 @@ public class FileDataStorage implements DataStorage {
             users = parseResult.getUsers();
             groups = parseResult.getGroups();
 
+            // Кладем информацию о пароле пользователя в отдельное хранилище
+            // и удаляем пароли из основного, что-бы пароли не утекали наружу.
             for (Map<String, List<String>> user : users) {
+                // TODO Безопасно брать поля из пользователя.
                 usersPasswordInfo.put(user.get("uid").get(0), user.get("password").get(0));
                 user.remove("password");
             }
@@ -66,13 +70,12 @@ public class FileDataStorage implements DataStorage {
 
     /**
      * Аутентификация сервисного аккаунта.
-     * <p>
+     *
      * В данном хранилище не используется сервисная аутентификация по причине того, что
      * никакой запрос на сервер не отправляется, а пользовательская аутентификация проходит
      * путём проверки наличия соответствующих логина и пароля пользователя в локальном файле формата json,
      * содержащем исключительно данные пользователей и групп.
      */
-
     @Override
     public Authentication authenticateService(String serviceName, String token) {
         return Authentication.NEGATIVE;
@@ -80,31 +83,31 @@ public class FileDataStorage implements DataStorage {
 
     @Override
     public List<Map<String, List<String>>> getAllUsers(Authentication authentication) {
+        if ( ! authentication.isSuccess()) {
+            throw new IllegalStateException("Access denied");
+        }
+
         Lock lock = updateDataLock.readLock();
         lock.lock();
         try {
-            if (authentication.isSuccess()) {
-                return users;
-            }
+            return users;
         } finally {
             lock.unlock();
         }
-
-        throw new IllegalStateException("Access denied");
     }
 
     @Override
     public List<Map<String, List<String>>> getAllGroups(Authentication authentication) {
+        if ( ! authentication.isSuccess()) {
+            throw new IllegalStateException("Access denied");
+        }
+
         Lock lock = updateDataLock.readLock();
         lock.lock();
         try {
-            if (authentication.isSuccess()) {
-                return groups;
-            }
+            return groups;
         } finally {
             lock.unlock();
         }
-
-        throw new IllegalStateException("Access denied");
     }
 }

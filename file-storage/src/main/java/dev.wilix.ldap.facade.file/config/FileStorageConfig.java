@@ -5,7 +5,6 @@ import dev.wilix.ldap.facade.api.DataStorage;
 import dev.wilix.ldap.facade.file.FileDataStorage;
 import dev.wilix.ldap.facade.file.FileParser;
 import dev.wilix.ldap.facade.file.FileWatcher;
-import dev.wilix.ldap.facade.file.ParseResult;
 import dev.wilix.ldap.facade.file.config.properties.FileStorageConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,9 +27,10 @@ public class FileStorageConfig {
     @Bean
     public DataStorage userDataStorage(FileParser fileParser) throws IOException {
 
-        final ParseResult initialState = fileParser.parseFileContent(Files.readString(config.getPathToFile()));
-
-        return new FileDataStorage(initialState, fileParser);
+        String fileContent = Files.readString(config.getPathToFile());
+        FileDataStorage fileDataStorage = new FileDataStorage(fileParser);
+        fileDataStorage.performParse(fileContent);
+        return fileDataStorage;
     }
 
     @Bean
@@ -40,7 +40,7 @@ public class FileStorageConfig {
 
     @Bean
     public FileWatcher fileWatcher(FileDataStorage fileDataStorage) {
-        FileWatcher fileWatcher = new FileWatcher(config, fileDataStorage::performParse);
+        FileWatcher fileWatcher = new FileWatcher(config.getPathToFile(), config.getFileWatchInterval(), fileDataStorage::performParse);
         fileWatcher.watchFileChanges();
 
         return fileWatcher;
