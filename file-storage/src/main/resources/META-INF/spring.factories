@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+dev.wilix.ldap.facade.file.config.FileStorageConfig

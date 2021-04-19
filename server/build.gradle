@@ -12,6 +12,7 @@ dependencies {
 
     // Хранилища
     implementation project(':espo-storage')
+    implementation project(':file-storage')
 
     // Дублирование определения зависимости делается для
     // предоставления информации о ней для тестов в других модулях.

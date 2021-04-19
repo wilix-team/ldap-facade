@@ -3,3 +3,5 @@ rootProject.name = 'ldap-facade'
 include 'api'
 include 'server'
 include 'espo-storage'
+include 'file-storage'
+
