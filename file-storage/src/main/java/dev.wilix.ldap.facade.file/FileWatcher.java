@@ -48,11 +48,6 @@ public class FileWatcher {
         FileAlterationObserver observer = new FileAlterationObserver(directory, createFilter());
         observer.addListener(new FileAlterationListenerAdaptor() {
             @Override
-            public void onStart(FileAlterationObserver observer) {
-                LOGGER.info("Starting to listen " + fileName + " file");
-            }
-
-            @Override
             public void onFileChange(File file) {
                 LOGGER.info("Receive file " + fileName + " change event.");
                 FileWatcher.this.processChangeEvent();
@@ -88,6 +83,7 @@ public class FileWatcher {
         FileAlterationMonitor monitor = new FileAlterationMonitor(fileWatchInterval, observer);
 
         try {
+            LOGGER.info("Starting to listen " + fileName + " file");
             monitor.start();
         } catch (InterruptedException e) {
             LOGGER.error("The operation was interrupted: ", e);

@@ -24,9 +24,7 @@ public class FileStorageTest {
     FileDataStorage fileDataStorage;
     @Autowired
     FileStorageConfigurationProperties fileStorageConfigurationProperties;
-    private final String FILE_FOR_CHANGING_CHECK = "./src/test/resources/changing_file_for_check_file_watcher.json";
     private final String FILE_WITH_CORRECT_USERS_AND_GROUPS_INFO = "./src/test/resources/correct_users_and_groups_file.json";
-    private final String FILE_EMPTY = "./src/test/resources/empty_json_for_wrong_mapping.json";
     private final String FILE_WITH_WRONG_JSON_FORMAT = "./src/test/resources/wrong_json_format.json";
 
     private final String WRONG_PATH_TO_FILE = "a/b/c";
@@ -54,6 +52,7 @@ public class FileStorageTest {
         List<Map<String, List<String>>> usersInfo = fileDataStorage.getAllUsers(authenticateUser);
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
+        assertEquals(0, usersInfo.stream().filter(u -> u.containsKey("password")).count());
 
         authenticateUser = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
         assertTrue(authenticateUser.isSuccess());
@@ -123,9 +122,8 @@ public class FileStorageTest {
     }
 
     @Test
-    public void exceptionNullPointerOfFileContent() throws IOException {
-        String fileContent = Files.readString(Path.of(FILE_EMPTY));
-        assertThrows(NullPointerException.class, () -> fileParser.parseFileContent(fileContent));
+    public void fileParserEmptyContent() throws IOException {
+        assertThrows(NullPointerException.class, () -> fileParser.parseFileContent(""));
     }
 
     @Test
@@ -135,18 +133,33 @@ public class FileStorageTest {
     }
 
     @Test
-    public void checkUpdateFileEventWhileThisFileWatching() throws IOException {
-        String fileContent = Files.readString(Path.of(FILE_WITH_CORRECT_USERS_AND_GROUPS_INFO));
+    public void checkUpdateFileEventWhileThisFileWatching() throws IOException, InterruptedException {
+        Path testFilePath = Path.of("./src/test/resources/check_watcher_file.json");
 
-        FileStorageConfigurationProperties config = new FileStorageConfigurationProperties();
-        config.setPathToFile(Path.of(FILE_FOR_CHANGING_CHECK));
+        try {
+            Files.createFile(testFilePath);
+            Files.writeString(testFilePath, "{\"users\":[],\"groups\":[]}");
 
-        FileWatcher fileWatcher = new FileWatcher(config.getPathToFile(), config.getFileWatchInterval(), fileDataStorage::performParse);
-        fileWatcher.watchFileChanges();
+            FileDataStorage fileDataStorage = new FileDataStorage(fileParser);
+            fileDataStorage.performParse(Files.readString(testFilePath));
+            FileWatcher fileWatcher = new FileWatcher(testFilePath, 15, fileDataStorage::performParse);
+            fileWatcher.watchFileChanges();
 
-        FileWriter writer = new FileWriter(FILE_FOR_CHANGING_CHECK);
-        writer.write(fileContent);
-        writer.flush();
+            Thread.sleep(150);
+
+            assertEquals(0, fileDataStorage.getAllUsers(Authentication.POSITIVE).size());
+            assertEquals(0, fileDataStorage.getAllGroups(Authentication.POSITIVE).size());
+
+            String fileContent = Files.readString(Path.of(FILE_WITH_CORRECT_USERS_AND_GROUPS_INFO));
+            Files.writeString(testFilePath, fileContent);
+
+            Thread.sleep(150);
+
+            assertTrue(fileDataStorage.getAllUsers(Authentication.POSITIVE).size() != 0);
+            assertTrue(fileDataStorage.getAllGroups(Authentication.POSITIVE).size() != 0);
+        } finally {
+            Files.delete(testFilePath);
+        }
     }
 
     @Test

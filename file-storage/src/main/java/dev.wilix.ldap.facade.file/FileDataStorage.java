@@ -3,6 +3,7 @@ package dev.wilix.ldap.facade.file;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +19,8 @@ public class FileDataStorage implements DataStorage {
     private final FileParser fileParser;
 
     private final ReadWriteLock updateDataLock = new ReentrantReadWriteLock();
-    private List<Map<String, List<String>>> users;
-    private List<Map<String, List<String>>> groups;
+    private List<Map<String, List<String>>> users = Collections.emptyList();
+    private List<Map<String, List<String>>> groups = Collections.emptyList();
     private Map<String, String> usersPasswordInfo;
 
     public FileDataStorage(FileParser fileParser) {
@@ -28,7 +29,6 @@ public class FileDataStorage implements DataStorage {
 
     public void performParse(String fileContent) {
         final ParseResult parseResult = fileParser.parseFileContent(fileContent);
-        usersPasswordInfo = new HashMap<>();
 
         Lock lock = updateDataLock.writeLock();
         lock.lock();
@@ -38,11 +38,13 @@ public class FileDataStorage implements DataStorage {
 
             // Кладем информацию о пароле пользователя в отдельное хранилище
             // и удаляем пароли из основного, что-бы пароли не утекали наружу.
+            Map<String, String> newUsersPasswordInfo = new HashMap<>();
             for (Map<String, List<String>> user : users) {
                 // TODO Безопасно брать поля из пользователя.
-                usersPasswordInfo.put(user.get("uid").get(0), user.get("password").get(0));
+                newUsersPasswordInfo.put(user.get("uid").get(0), user.get("password").get(0));
                 user.remove("password");
             }
+            usersPasswordInfo = newUsersPasswordInfo;
 
         } finally {
             lock.unlock();
