@@ -39,7 +39,7 @@ public class FileStorageConfig {
     }
 
     @Bean
-    public FileWatcher fileWatcher(FileDataStorage fileDataStorage) { // FIXME Может некорректно сработать.
+    public FileWatcher fileWatcher(FileDataStorage fileDataStorage) {
         FileWatcher fileWatcher = new FileWatcher(config, fileDataStorage::performParse);
         fileWatcher.watchFileChanges();
 

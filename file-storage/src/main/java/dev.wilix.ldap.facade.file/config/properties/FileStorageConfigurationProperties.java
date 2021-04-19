@@ -13,11 +13,22 @@ public class FileStorageConfigurationProperties {
     @NotNull
     private Path pathToFile;
 
+    @NotNull
+    private int interval;
+
     public Path getPathToFile() {
         return this.pathToFile;
     }
 
     public void setPathToFile(Path pathToFile) {
         this.pathToFile = pathToFile;
+    }
+
+    public int getInterval() {
+        return interval;
+    }
+
+    public void setInterval(int interval) {
+        this.interval = interval;
     }
 }

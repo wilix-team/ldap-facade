@@ -3,7 +3,7 @@ package dev.wilix.ldap.facade.file;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 
-import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -20,6 +20,15 @@ public class FileDataStorage implements DataStorage {
 
     public FileDataStorage(ParseResult initialState, FileParser fileParser) {
         this.fileParser = fileParser;
+
+        Lock lock = updateDataLock.writeLock();
+        lock.lock();
+        try {
+            this.users = initialState.getUsers();
+            this.groups = initialState.getGroups();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void performParse(String fileContent) {
@@ -54,7 +63,7 @@ public class FileDataStorage implements DataStorage {
 
     /**
      * Аутентификация сервисного аккаунта.
-     *
+     * <p>
      * В данном хранилище не используется сервисная аутентификация по причине того, что
      * никакой запрос на сервер не отправляется, а пользовательская аутентификация проходит
      * путём проверки наличия соответствующих логина и пароля пользователя в локальном файле формата json,
@@ -72,7 +81,9 @@ public class FileDataStorage implements DataStorage {
         lock.lock();
         try {
             if (authentication.isSuccess()) {
-                return users;
+                List<Map<String, List<String>>> usersWithoutPassword = new ArrayList<>(users);
+                usersWithoutPassword.forEach(user -> user.remove("password"));
+                return usersWithoutPassword;
             }
         } finally {
             lock.unlock();

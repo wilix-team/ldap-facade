@@ -65,7 +65,7 @@ public class FileStorageTest {
 
         Authentication authentication = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
         List<Map<String, List<String>>> usersInfo = fileDataStorage.getAllUsers(authentication);
-        String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName", "password"};
+        String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
     }
 

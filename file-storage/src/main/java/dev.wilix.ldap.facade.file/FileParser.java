@@ -64,15 +64,11 @@ public class FileParser {
             jsonToUserFieldSetter.accept("name", value -> usersInfo.put("cn", List.of(value)));
             jsonToUserFieldSetter.accept("phoneNumber", value -> usersInfo.put("telephoneNumber", List.of(value)));
             jsonToUserFieldSetter.accept("emailAddress", value -> usersInfo.put("mail", List.of(value)));
-
-            // TODO пароль передавать нельзя, переработать
             jsonToUserFieldSetter.accept("password", value -> usersInfo.put("password", List.of(value)));
 
             List<String> memberOfList = new ArrayList<>();
 
             for (Map<String, List<String>> group : groups) {
-                LOGGER.info("groups " + groups);
-                LOGGER.info("group " + group);
                 if (group.get("member").contains(user.get("userName").asText())) {
                     memberOfList.add(group.get("uid").get(0));
                 }

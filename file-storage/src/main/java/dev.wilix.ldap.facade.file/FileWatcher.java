@@ -19,32 +19,31 @@ import java.util.function.Consumer;
 public class FileWatcher {
     private final static Logger LOGGER = LoggerFactory.getLogger(FileWatcher.class);
     private final Path pathToFile;
-//    private final FileDataStorage fileDataStorage;
+    private final int interval;
     private final Consumer<String> fileContentListener;
+    private final String fileName;
 
     public FileWatcher(FileStorageConfigurationProperties config, Consumer<String> fileContentListener) {
         this.pathToFile = config.getPathToFile();
+        this.interval = config.getInterval();
         this.fileContentListener = fileContentListener;
-//        this.fileDataStorage = fileDataStorage;
+        this.fileName = pathToFile.getFileName().toString();
     }
 
-    // реализовать, чтобы сразу же запускался параллельным потоком
     public void watchFileChanges() {
-
         IOFileFilter filter = createFilter();
         FileAlterationObserver observer = createObserver(filter);
         watch(observer);
     }
 
     private IOFileFilter createFilter() {
-        // TODO Организовать прослушивание исключительно того файла, который нас интересует.
         IOFileFilter directories = FileFilterUtils.and(
                 FileFilterUtils.directoryFileFilter(),
                 HiddenFileFilter.VISIBLE);
 
         IOFileFilter files = FileFilterUtils.and(
                 FileFilterUtils.fileFileFilter(),
-                FileFilterUtils.suffixFileFilter(".json"));
+                FileFilterUtils.suffixFileFilter(fileName));
 
         return FileFilterUtils.or(directories, files);
     }
@@ -60,50 +59,33 @@ public class FileWatcher {
         observer.addListener(new FileAlterationListenerAdaptor() {
             @Override
             public void onStart(FileAlterationObserver observer) {
-                LOGGER.info("Starting to listen fata file"); // TODO Имя файла.
-
-                //processChangeEvent(); // FIXME Подумать на корректностью такого подхода.
+                LOGGER.info("Starting to listen " + fileName + " file");
             }
-
-
-            //            @Override
-//            public void onFileCreate(File file) {
-//                LOGGER.info("File created: " + file.getName());
-//                fileDataStorage.performParse();
-//            }
 
             @Override
             public void onFileChange(File file) {
-                LOGGER.info("Receive file change event."); // TODO Слушаем только один конкретный файл, упростить сообщение.
-
+                LOGGER.info("Receive file " + fileName + " change event.");
                 processChangeEvent();
             }
 
             private void processChangeEvent() {
-                String fileContent = null; // TODO 1. Прочитать содержимое файла
+                String fileContent = null;
                 try {
                     fileContent = Files.readString(pathToFile);
-                } catch (IOException e) { // FIXME Это будет в дрегом треде, требуется остаовить приложение.
+                } catch (IOException e) {
                     throw new IllegalStateException("Can't read watched wile!", e);
                 }
-                fileContentListener.accept(fileContent); // TODO 2. Передать содержимое в слушатель.
+                fileContentListener.accept(fileContent);
             }
-
-//            @Override
-//            public void onFileDelete(File file) {
-//                LOGGER.info("File deleted: " + file.getName());
-//                fileDataStorage.performParse();
-//            }
         });
         return observer;
     }
 
     private void watch(FileAlterationObserver observer){
-        FileAlterationMonitor monitor = new FileAlterationMonitor(3000, observer); // TODO В настройку!
+        FileAlterationMonitor monitor = new FileAlterationMonitor(interval, observer);
 
         try {
             monitor.start();
-            //monitor.run();
         } catch (InterruptedException e) {
             LOGGER.error("The operation was interrupted: ", e);
             throw new IllegalStateException("The operation was interrupted: ", e);

@@ -2,3 +2,4 @@ storage:
   type: 'file'
   file:
     pathToFile: './src/test/resources/correct_users_and_groups_file.json'
+    interval: 3000
