@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
 import java.nio.file.Path;
 
 @Validated
@@ -14,7 +15,8 @@ public class FileStorageConfigurationProperties {
     private Path pathToFile;
 
     @NotNull
-    private int interval;
+    @PositiveOrZero
+    private int fileWatchInterval;
 
     public Path getPathToFile() {
         return this.pathToFile;
@@ -24,11 +26,11 @@ public class FileStorageConfigurationProperties {
         this.pathToFile = pathToFile;
     }
 
-    public int getInterval() {
-        return interval;
+    public int getFileWatchInterval() {
+        return fileWatchInterval;
     }
 
-    public void setInterval(int interval) {
-        this.interval = interval;
+    public void setFileWatchInterval(int fileWatchInterval) {
+        this.fileWatchInterval = fileWatchInterval;
     }
 }

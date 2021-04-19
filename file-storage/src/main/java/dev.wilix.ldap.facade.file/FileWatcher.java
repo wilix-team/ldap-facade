@@ -19,13 +19,13 @@ import java.util.function.Consumer;
 public class FileWatcher {
     private final static Logger LOGGER = LoggerFactory.getLogger(FileWatcher.class);
     private final Path pathToFile;
-    private final int interval;
+    private final int fileWatchInterval;
     private final Consumer<String> fileContentListener;
     private final String fileName;
 
     public FileWatcher(FileStorageConfigurationProperties config, Consumer<String> fileContentListener) {
         this.pathToFile = config.getPathToFile();
-        this.interval = config.getInterval();
+        this.fileWatchInterval = config.getFileWatchInterval();
         this.fileContentListener = fileContentListener;
         this.fileName = pathToFile.getFileName().toString();
     }
@@ -82,7 +82,7 @@ public class FileWatcher {
     }
 
     private void watch(FileAlterationObserver observer){
-        FileAlterationMonitor monitor = new FileAlterationMonitor(interval, observer);
+        FileAlterationMonitor monitor = new FileAlterationMonitor(fileWatchInterval, observer);
 
         try {
             monitor.start();

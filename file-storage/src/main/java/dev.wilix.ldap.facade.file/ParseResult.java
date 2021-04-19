@@ -29,22 +29,9 @@ public class ParseResult {
 
     @Override
     public String toString() {
-        StringBuilder parseInfo = new StringBuilder();
-
-        parseInfo.append("ParseResult{\n" + "users={\n");
-
-        for (Map<String, List<String>> user : users) {
-            parseInfo.append(user.get("uid").get(0)).append("={").append(user).append("},\n");
-        }
-
-        parseInfo.append("},\n groups={\n");
-
-        for (Map<String, List<String>> group : groups) {
-            parseInfo.append(group.get("uid").get(0)).append("={").append(group).append("},\n");
-        }
-
-        parseInfo.append("}\n" + '}');
-
-        return parseInfo.toString();
+        return "ParseResult{" +
+                "users=" + users +
+                ", groups=" + groups +
+                '}';
     }
 }

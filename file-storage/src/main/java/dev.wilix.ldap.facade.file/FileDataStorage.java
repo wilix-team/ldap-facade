@@ -3,7 +3,7 @@ package dev.wilix.ldap.facade.file;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -17,48 +17,51 @@ public class FileDataStorage implements DataStorage {
     private final ReadWriteLock updateDataLock = new ReentrantReadWriteLock();
     private List<Map<String, List<String>>> users;
     private List<Map<String, List<String>>> groups;
+    private Map<String, String> usersPasswordInfo;
 
     public FileDataStorage(ParseResult initialState, FileParser fileParser) {
         this.fileParser = fileParser;
-
-        Lock lock = updateDataLock.writeLock();
-        lock.lock();
-        try {
-            this.users = initialState.getUsers();
-            this.groups = initialState.getGroups();
-        } finally {
-            lock.unlock();
-        }
+        this.users = initialState.getUsers();
+        this.groups = initialState.getGroups();
     }
 
     public void performParse(String fileContent) {
         final ParseResult parseResult = fileParser.parseFileContent(fileContent);
+        usersPasswordInfo = new HashMap<>();
 
         Lock lock = updateDataLock.writeLock();
         lock.lock();
         try {
             users = parseResult.getUsers();
             groups = parseResult.getGroups();
+
+            for (Map<String, List<String>> user : users) {
+                usersPasswordInfo.put(user.get("uid").get(0), user.get("password").get(0));
+                user.remove("password");
+            }
+
         } finally {
             lock.unlock();
         }
     }
 
     @Override
-    public Authentication authenticateUser(String userName, String password) {
+    public FileUserAuthentication authenticateUser(String userName, String password) {
+        FileUserAuthentication fileUserAuthentication = new FileUserAuthentication();
+        fileUserAuthentication.setUserName(userName);
+
         Lock lock = updateDataLock.readLock();
         lock.lock();
         try {
-            for (Map<String, List<String>> user : users) {
-                if (user.get("uid").get(0).equals(userName) && user.get("password").get(0).equals(password)) {
-                    return Authentication.POSITIVE;
-                }
+            if (usersPasswordInfo.containsKey(userName) && usersPasswordInfo.get(userName).equals(password)) {
+                fileUserAuthentication.setSuccess(true);
+                return fileUserAuthentication;
             }
         } finally {
             lock.unlock();
         }
 
-        return Authentication.NEGATIVE;
+        return fileUserAuthentication;
     }
 
     /**
@@ -81,9 +84,7 @@ public class FileDataStorage implements DataStorage {
         lock.lock();
         try {
             if (authentication.isSuccess()) {
-                List<Map<String, List<String>>> usersWithoutPassword = new ArrayList<>(users);
-                usersWithoutPassword.forEach(user -> user.remove("password"));
-                return usersWithoutPassword;
+                return users;
             }
         } finally {
             lock.unlock();

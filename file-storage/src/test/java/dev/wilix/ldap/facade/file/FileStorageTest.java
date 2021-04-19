@@ -39,7 +39,23 @@ public class FileStorageTest {
         String fileContent = Files.readString(fileStorageConfigurationProperties.getPathToFile());
         fileDataStorage.performParse(fileContent);
 
-        Authentication authenticateUser = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
+        FileUserAuthentication authenticateUser = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
+        assertTrue(authenticateUser.isSuccess());
+    }
+
+    @Test
+    public void attemptAuthenticateThenReceiveUsersInfoThenAttemptAuthenticate() throws IOException {
+        String fileContent = Files.readString(fileStorageConfigurationProperties.getPathToFile());
+        fileDataStorage.performParse(fileContent);
+
+        FileUserAuthentication authenticateUser = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
+        assertTrue(authenticateUser.isSuccess());
+
+        List<Map<String, List<String>>> usersInfo = fileDataStorage.getAllUsers(authenticateUser);
+        String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName"};
+        usersInfo.forEach(e -> checkAttributes(e, attributes));
+
+        authenticateUser = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
         assertTrue(authenticateUser.isSuccess());
     }
 
@@ -48,7 +64,7 @@ public class FileStorageTest {
         String fileContent = Files.readString(fileStorageConfigurationProperties.getPathToFile());
         fileDataStorage.performParse(fileContent);
 
-        Authentication authenticateUser = fileDataStorage.authenticateUser("wrongUser", "wrongPassword");
+        FileUserAuthentication authenticateUser = fileDataStorage.authenticateUser("wrongUser", "wrongPassword");
         assertFalse(authenticateUser.isSuccess());
     }
 
@@ -63,7 +79,7 @@ public class FileStorageTest {
         String fileContent = Files.readString(fileStorageConfigurationProperties.getPathToFile());
         fileDataStorage.performParse(fileContent);
 
-        Authentication authentication = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
+        FileUserAuthentication authentication = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
         List<Map<String, List<String>>> usersInfo = fileDataStorage.getAllUsers(authentication);
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
@@ -71,8 +87,7 @@ public class FileStorageTest {
 
     @Test
     public void exceptionOfReceiveUsersInfo() {
-        Authentication authentication = Authentication.NEGATIVE;
-        assertThrows(IllegalStateException.class, () -> fileDataStorage.getAllUsers(authentication));
+        assertThrows(IllegalStateException.class, () -> fileDataStorage.getAllUsers(Authentication.NEGATIVE));
     }
 
     @Test
@@ -80,7 +95,7 @@ public class FileStorageTest {
         String fileContent = Files.readString(fileStorageConfigurationProperties.getPathToFile());
         fileDataStorage.performParse(fileContent);
 
-        Authentication authentication = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
+        FileUserAuthentication authentication = fileDataStorage.authenticateUser(USERNAME, PASSWORD);
         List<Map<String, List<String>>> groupsInfo = fileDataStorage.getAllGroups(authentication);
         String[] attributes = {"id", "entryuuid", "uid", "cn", "gidnumber", "primarygrouptoken", "member"};
         groupsInfo.forEach(e -> checkAttributes(e, attributes));
@@ -88,8 +103,7 @@ public class FileStorageTest {
 
     @Test
     public void exceptionOfReceiveGroupsInfo() {
-        Authentication authentication = Authentication.NEGATIVE;
-        assertThrows(IllegalStateException.class, () -> fileDataStorage.getAllGroups(authentication));
+        assertThrows(IllegalStateException.class, () -> fileDataStorage.getAllGroups(Authentication.NEGATIVE));
     }
 
     @Test
