@@ -9,9 +9,19 @@ name: build_test
 steps:
   # Build and test with Gradle
   - name: build
-    image: gradle:jdk11-hotspot
+    image: gradle:7.0-jdk11-hotspot
+    environment:
+      MAVENUSER: ${maven-user}
+      MAVENPASSWORD: ${maven-password}
     commands:
       # BUILD
       - gradle assemble
       # TEST
       - gradle check
+trigger:
+  branch:
+    - master
+    - develop
+  event:
+    - pull_request
+    - push
