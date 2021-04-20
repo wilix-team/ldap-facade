@@ -11,8 +11,10 @@ steps:
   - name: build
     image: gradle:7.0-jdk11-hotspot
     environment:
-      MAVENUSER: ${maven-user}
-      MAVENPASSWORD: ${maven-password}
+      MAVENUSER:
+        from_secret: maven-user
+      MAVENPASSWORD:
+        from_secret: maven-password
     commands:
       # BUILD
       - gradle assemble
