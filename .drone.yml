@@ -11,9 +11,9 @@ steps:
   - name: build
     image: gradle:7.0-jdk11-hotspot
     environment:
-      MAVENUSER:
+      ORG_GRADLE_PROJECT_mavenUser:
         from_secret: maven-user
-      MAVENPASSWORD:
+      ORG_GRADLE_PROJECT_mavenPassword:
         from_secret: maven-password
     commands:
       # BUILD
