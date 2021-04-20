@@ -1,0 +1,17 @@
+---
+################
+# Build & Test #
+################
+
+kind: pipeline
+name: build_test
+
+steps:
+  # Build and test with Gradle
+  - name: build
+    image: gradle:jdk11-hotspot
+    commands:
+      # BUILD
+      - gradle assemble
+      # TEST
+      - gradle check
