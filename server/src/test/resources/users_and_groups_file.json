@@ -1,0 +1,132 @@
+{
+  "users": [
+    {
+      "company": [
+        "Wilix"
+      ],
+      "id": [
+        "1"
+      ],
+      "entryuuid": [
+        "1"
+      ],
+      "uid": [
+        "username"
+      ],
+      "cn": [
+        "FirstName SecondName"
+      ],
+      "gn": [
+        "FirstName"
+      ],
+      "sn": [
+        "SecondName"
+      ],
+      "active": [
+        "true"
+      ],
+      "telephoneNumber": [
+        "88005553535"
+      ],
+      "mail": [
+        "email@e.mail"
+      ],
+      "memberof": [
+        "groupOne",
+        "groupTwo"
+      ],
+      "vcsName": [
+        "FirstName SecondName",
+        "88005553535"
+      ]
+    },
+    {
+      "company": [
+        "Wilix"
+      ],
+      "id": [
+        "2"
+      ],
+      "entryuuid": [
+        "2"
+      ],
+      "uid": [
+        "usernameTwo"
+      ],
+      "cn": [
+        "FirstNameSecondUser SecondNameSecondUser"
+      ],
+      "gn": [
+        "FirstNameSecondUser"
+      ],
+      "sn": [
+        "SecondNameSecondUser"
+      ],
+      "active": [
+        "false"
+      ],
+      "telephoneNumber": [
+        "12345678900"
+      ],
+      "mail": [
+        "email2@e.mail"
+      ],
+      "memberof": [
+        "groupOne"
+      ],
+      "vcsName": [
+        "FirstNameSecondUser SecondNameSecondUser",
+        "12345678900"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": [
+        "1"
+      ],
+      "primarygrouptoken": [
+        "1"
+      ],
+      "gidnumber": [
+        "1"
+      ],
+      "entryuuid": [
+        "1"
+      ],
+      "uid": [
+        "groupOne"
+      ],
+      "cn": [
+        "groupOne"
+      ],
+      "member": [
+        "username",
+        "username2"
+      ]
+    },
+    {
+      "id": [
+        "2"
+      ],
+      "primarygrouptoken": [
+        "2"
+      ],
+      "gidnumber": [
+        "2"
+      ],
+      "entryuuid": [
+        "2"
+      ],
+      "uid": [
+        "groupTwo"
+      ],
+      "cn": [
+        "groupTwo"
+      ],
+      "member": [
+        "username"
+      ]
+    }
+  ]
+}
