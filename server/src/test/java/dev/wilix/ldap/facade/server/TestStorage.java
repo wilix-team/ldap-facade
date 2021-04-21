@@ -2,41 +2,46 @@ package dev.wilix.ldap.facade.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.wilix.ldap.facade.api.Authentication;
+import org.springframework.core.io.ClassPathResource;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import static dev.wilix.ldap.facade.server.TestUtils.*;
 
 public class TestStorage implements dev.wilix.ldap.facade.api.DataStorage {
 
     private List<Map<String, List<String>>> users = null;
     private List<Map<String, List<String>>> groups = null;
 
-    private final Path PATH_TO_FILE = Path.of("./src/test/resources/users_and_groups_file.json");
+    public TestStorage() {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            File usersAndGroupsInfoFile = new ClassPathResource(USERS_AND_GROUPS_JSON_PATH).getFile();
 
-    private final String USERNAME = "username";
-    private final String USER_PASSWORD = "password";
-    private final String NAME_OF_SERVICE = "serviceName";
-    private final String TOKEN_OF_SERVICE = "token";
-
-    @PostConstruct
-    private void prepareEntriesInfo() throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        Map<String, List<Map<String, List<String>>>> usersAndGroupsInfo = objectMapper.readValue(PATH_TO_FILE.toFile(), Map.class);
-        users = usersAndGroupsInfo.get("users");
-        groups = usersAndGroupsInfo.get("groups");
+            Map<String, List<Map<String, List<String>>>> usersAndGroupsInfo = objectMapper.readValue(usersAndGroupsInfoFile, Map.class);
+            users = usersAndGroupsInfo.get("users");
+            groups = usersAndGroupsInfo.get("groups");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<Map<String, List<String>>> getAllUsers(Authentication authentication) {
-        return authentication.isSuccess() ? users : null;
+        if (!authentication.isSuccess()) {
+            throw new IllegalStateException("Access denied");
+        }
+        return users;
     }
 
     @Override
     public List<Map<String, List<String>>> getAllGroups(Authentication authentication) {
-        return authentication.isSuccess() ? groups : null;
+        if (!authentication.isSuccess()) {
+            throw new IllegalStateException("Access denied");
+        }
+        return groups;
     }
 
     @Override
