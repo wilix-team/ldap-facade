@@ -198,12 +198,12 @@ public class ServerTest {
 
     @Test
     public void searchAllEntityWithoutAuthentication() {
-            try (LDAPConnection ldap = openLDAP()) {
-                ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
-            } catch (LDAPException e) {
-                assertEquals(49, e.getResultCode().intValue());
-                assertEquals("Incorrect credentials or access rights.", e.getDiagnosticMessage());
-            }
+        try (LDAPConnection ldap = openLDAP()) {
+            ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
+        } catch (LDAPException e) {
+            assertEquals(49, e.getResultCode().intValue());
+            assertEquals("Incorrect credentials or access rights.", e.getDiagnosticMessage());
+        }
     }
 
     @Test
