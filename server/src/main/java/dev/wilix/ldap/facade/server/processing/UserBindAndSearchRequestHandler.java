@@ -120,7 +120,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         if (authentication == null || !authentication.isSuccess()) {
             return new LDAPMessage(messageID,
                     new SearchResultDoneProtocolOp(ResultCode.INVALID_CREDENTIALS_INT_VALUE,
-                            null, null, null),
+                            null, "Incorrect credentials or access rights.", null),
                     Collections.emptyList());
         }
 
