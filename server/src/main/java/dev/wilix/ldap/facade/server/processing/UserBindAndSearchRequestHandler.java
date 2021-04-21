@@ -117,6 +117,13 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
     public LDAPMessage processSearchRequest(int messageID, SearchRequestProtocolOp request, List<Control> controls) {
         LOG.info("Receive search request: {}", request);
 
+        if (authentication == null || !authentication.isSuccess()) {
+            return new LDAPMessage(messageID,
+                    new SearchResultDoneProtocolOp(ResultCode.INVALID_CREDENTIALS_INT_VALUE,
+                            null, null, null),
+                    Collections.emptyList());
+        }
+
         List<SearchResultEntry> foundedEntries;
         try {
             foundedEntries = searchOperationProcessor.doSearch(authentication, request);
