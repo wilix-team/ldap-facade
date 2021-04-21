@@ -91,7 +91,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     null, null));
         }
 
-        if (!authResult.isSuccess()) {
+        if ( ! authResult.isSuccess()) {
             LOG.warn("Bad auth result from CRM for request {}", request);
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.INVALID_CREDENTIALS_INT_VALUE, null,
