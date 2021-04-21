@@ -26,6 +26,14 @@ dependencies {
 
     implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
     testFixturesApi group: 'com.google.guava', name: 'guava', version: '30.0-jre'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 jar {
