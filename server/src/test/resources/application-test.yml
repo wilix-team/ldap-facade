@@ -1,0 +1,12 @@
+storage:
+  type: ''
+
+ldap:
+  baseDn: 'dc=example,dc=com'
+  servicesBaseDn: 'ou=services,dc=example,dc=com'
+  usersBaseDn: 'ou=people,dc=example,dc=com'
+  groupsBaseDn: 'ou=groups,dc=example,dc=com'
+  userClassName: 'organizationalPerson'
+  groupClassName: 'groupOfNames'
+  mainNameAttribute: 'uid'
+  searchCacheExpirationMinutes: 0
