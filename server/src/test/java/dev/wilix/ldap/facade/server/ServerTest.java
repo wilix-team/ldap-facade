@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static dev.wilix.ldap.facade.server.TestUtils.*;
 
@@ -197,11 +198,12 @@ public class ServerTest {
 
     @Test
     public void searchAllEntityWithoutAuthentication() {
-        assertThrows(LDAPException.class, () -> {
-            try (LDAPConnection ldap = openLDAP()) {
-                ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
-            }
-        });
+        try (LDAPConnection ldap = openLDAP()) {
+            ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
+        } catch (LDAPException e) {
+            assertEquals(49, e.getResultCode().intValue());
+            assertEquals("Incorrect credentials or access rights.", e.getDiagnosticMessage());
+        }
     }
 
     @Test
