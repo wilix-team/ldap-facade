@@ -32,7 +32,7 @@ public class EspoDataStorageConfigurationProperties {
     private String baseUrl;
 
     @NotEmpty
-    private Map<String, List<String>> additionalUserInformationTags;
+    private Map<String, List<String>> additionalUserInformationAttributes;
 
     public int getCacheExpirationMinutes() {
         return cacheExpirationMinutes;
@@ -50,11 +50,11 @@ public class EspoDataStorageConfigurationProperties {
         this.baseUrl = baseUrl;
     }
 
-    public Map<String, List<String>> getAdditionalUserInformationTags() {
-        return additionalUserInformationTags;
+    public Map<String, List<String>> getAdditionalUserInformationAttributes() {
+        return additionalUserInformationAttributes;
     }
 
-    public void setAdditionalUserInformationTags(Map<String, List<String>> additionalUserInformationTags) {
-        this.additionalUserInformationTags = additionalUserInformationTags;
+    public void setAdditionalUserInformationAttributes(Map<String, List<String>> additionalUserInformationAttributes) {
+        this.additionalUserInformationAttributes = additionalUserInformationAttributes;
     }
 }

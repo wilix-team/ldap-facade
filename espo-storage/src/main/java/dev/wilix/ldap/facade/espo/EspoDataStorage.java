@@ -45,7 +45,7 @@ public class EspoDataStorage implements DataStorage {
     private final RequestHelper requestHelper;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
-    private final Map<String, List<String>> additionalUserInformationTags;
+    private final Map<String, List<String>> additionalUserInformationAttributes;
 
     private final String authenticateUserUri;
     private final String searchAllUsersUri;
@@ -61,7 +61,7 @@ public class EspoDataStorage implements DataStorage {
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
 
-        additionalUserInformationTags = config.getAdditionalUserInformationTags();
+        additionalUserInformationAttributes = config.getAdditionalUserInformationAttributes();
 
         try {
             authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
@@ -138,7 +138,7 @@ public class EspoDataStorage implements DataStorage {
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
-        return EntityParser.parseUserInfo(response.get("user"), additionalUserInformationTags);
+        return EntityParser.parseUserInfo(response.get("user"), additionalUserInformationAttributes);
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
@@ -166,7 +166,7 @@ public class EspoDataStorage implements DataStorage {
         JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
 
         return StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(userJsonNode -> EntityParser.parseUserInfo(userJsonNode, additionalUserInformationTags))
+                .map(userJsonNode -> EntityParser.parseUserInfo(userJsonNode, additionalUserInformationAttributes))
                 .collect(Collectors.toList());
     }
 
