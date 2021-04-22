@@ -51,7 +51,6 @@ public class EspoDataStorage implements DataStorage {
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
 
-
     public EspoDataStorage(RequestHelper requestHelper, EspoDataStorageConfigurationProperties config) {
         this.requestHelper = requestHelper;
         users = CacheBuilder.newBuilder()
