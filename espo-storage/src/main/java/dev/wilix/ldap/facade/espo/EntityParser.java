@@ -79,7 +79,6 @@ public class EntityParser {
             // FIXME Решить вопрос перезатирания записей, когда приходящие атрибуты совпадают со значениями от сервера
             //  добавляются дополнительные свойства пользователя в общее хранилище свойств пользователя
             for (Map.Entry<String, List<String>> tagInformation : additionalUserAttributes.entrySet()) {
-
                 String nameOfAttribute = tagInformation.getKey();
                 List<String> valueOfAttribute = tagInformation.getValue();
 
