@@ -37,9 +37,8 @@ storage:
     # baseUrl: https://example.com
     baseUrl:
     # Указываются пользовательские свойства (информация), добавляемая в ответ на запрос получения пользователей.
-    # additionalUserInformationAttributes:
+    # additionalUserAttributes:
     #   'exampleTag': [exampleValue, exampleValue2]
-    additionalUserInformationAttributes:
 
   file:
     # Указывает путь к файлу json, в котором хранятся данные о пользователях и группах.

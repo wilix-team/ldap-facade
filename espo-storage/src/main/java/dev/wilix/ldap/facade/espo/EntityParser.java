@@ -27,14 +27,19 @@ import java.util.function.Consumer;
 
 public class EntityParser {
 
+    private final Map<String, List<String>> additionalUserAttributes;
+
+    public EntityParser(Map<String, List<String>> additionalUserAttributes) {
+        this.additionalUserAttributes = additionalUserAttributes;
+    }
+
     /**
      * Парсинг пользователя из формата ответа от CRM.
      *
      * @param userJsonField Json поле с информацией о пользователе.
-     * @param additionalUserInformationAttributes дополнительная информация о пользователе идентичная для всех пользователей.
      * @return Разобранная информация о пользователе в ожидаемом формате.
      */
-    static Map<String, List<String>> parseUserInfo(JsonNode userJsonField, Map<String, List<String>> additionalUserInformationAttributes) {
+    Map<String, List<String>> parseUserInfo(JsonNode userJsonField) {
         Map<String, List<String>> info = new HashMap<>();
 
         if (userJsonField != null) {
@@ -72,7 +77,7 @@ public class EntityParser {
             info.put("vcsName", vcsName);
 
             // добавляются дополнительные свойства пользователя в общее хранилище свойств пользователя
-            for (Map.Entry<String, List<String>> tagInformation : additionalUserInformationAttributes.entrySet()) {
+            for (Map.Entry<String, List<String>> tagInformation : additionalUserAttributes.entrySet()) {
                 info.put(tagInformation.getKey(), tagInformation.getValue());
             }
         }
@@ -86,7 +91,7 @@ public class EntityParser {
      * @param groupJsonNode
      * @return
      */
-    static Map<String, List<String>> parseGroupInfo(JsonNode groupJsonNode) {
+    Map<String, List<String>> parseGroupInfo(JsonNode groupJsonNode) {
         Map<String, List<String>> info = new HashMap<>();
 
         if (groupJsonNode != null) {

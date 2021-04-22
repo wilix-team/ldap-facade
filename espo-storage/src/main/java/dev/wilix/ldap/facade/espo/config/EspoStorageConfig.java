@@ -18,9 +18,11 @@ package dev.wilix.ldap.facade.espo.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.wilix.ldap.facade.api.DataStorage;
+import dev.wilix.ldap.facade.espo.EntityParser;
 import dev.wilix.ldap.facade.espo.EspoDataStorage;
 import dev.wilix.ldap.facade.espo.RequestHelper;
 import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -35,8 +37,11 @@ import java.time.Duration;
 @ConditionalOnProperty(prefix = "storage", name = "type", havingValue = "espo")
 public class EspoStorageConfig {
 
+    @Autowired
+    EspoDataStorageConfigurationProperties config;
+
     @Bean
-    public DataStorage userDataStorage(EspoDataStorageConfigurationProperties config) {
+    public DataStorage userDataStorage() {
         return new EspoDataStorage(requestHelper(), config);
     }
 
@@ -51,6 +56,11 @@ public class EspoStorageConfig {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10)) // TODO Возможно потребуется выносить в настройки.
                 .build();
+    }
+
+    @Bean
+    public EntityParser entityParser() {
+        return new EntityParser(config.getAdditionalUserAttributes());
     }
 
     @Bean

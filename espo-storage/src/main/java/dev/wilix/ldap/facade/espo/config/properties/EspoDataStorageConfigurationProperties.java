@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +32,7 @@ public class EspoDataStorageConfigurationProperties {
     @NotEmpty
     private String baseUrl;
 
-    @NotEmpty
-    private Map<String, List<String>> additionalUserInformationAttributes;
+    private Map<String, List<String>> additionalUserAttributes = Collections.emptyMap();
 
     public int getCacheExpirationMinutes() {
         return cacheExpirationMinutes;
@@ -50,11 +50,11 @@ public class EspoDataStorageConfigurationProperties {
         this.baseUrl = baseUrl;
     }
 
-    public Map<String, List<String>> getAdditionalUserInformationAttributes() {
-        return additionalUserInformationAttributes;
+    public Map<String, List<String>> getAdditionalUserAttributes() {
+        return additionalUserAttributes;
     }
 
-    public void setAdditionalUserInformationAttributes(Map<String, List<String>> additionalUserInformationAttributes) {
-        this.additionalUserInformationAttributes = additionalUserInformationAttributes;
+    public void setAdditionalUserAttributes(Map<String, List<String>> additionalUserAttributes) {
+        this.additionalUserAttributes = additionalUserAttributes;
     }
 }

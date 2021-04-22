@@ -25,6 +25,7 @@ import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfiguration
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -45,11 +46,13 @@ public class EspoDataStorage implements DataStorage {
     private final RequestHelper requestHelper;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
-    private final Map<String, List<String>> additionalUserInformationAttributes;
 
     private final String authenticateUserUri;
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
+
+    @Autowired
+    EntityParser entityParser;
 
     public EspoDataStorage(RequestHelper requestHelper, EspoDataStorageConfigurationProperties config) {
         this.requestHelper = requestHelper;
@@ -60,8 +63,6 @@ public class EspoDataStorage implements DataStorage {
         groups = CacheBuilder.newBuilder()
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
-
-        additionalUserInformationAttributes = config.getAdditionalUserInformationAttributes();
 
         try {
             authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
@@ -138,13 +139,13 @@ public class EspoDataStorage implements DataStorage {
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
-        return EntityParser.parseUserInfo(response.get("user"), additionalUserInformationAttributes);
+        return entityParser.parseUserInfo(response.get("user"));
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(searchAllGroupsUri, authentication);
         List<Map<String, List<String>>> groups = StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(EntityParser::parseGroupInfo)
+                .map(groupJsonField -> entityParser.parseGroupInfo(groupJsonField))
                 .collect(Collectors.toList());
 
         // FIXME Подумать, что делать с таким явным объявление названий атрибутов.
@@ -166,7 +167,7 @@ public class EspoDataStorage implements DataStorage {
         JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
 
         return StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(userJsonNode -> EntityParser.parseUserInfo(userJsonNode, additionalUserInformationAttributes))
+                .map(userJsonField -> entityParser.parseUserInfo(userJsonField))
                 .collect(Collectors.toList());
     }
 
