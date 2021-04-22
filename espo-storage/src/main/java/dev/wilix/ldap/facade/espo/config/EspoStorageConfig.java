@@ -42,7 +42,7 @@ public class EspoStorageConfig {
 
     @Bean
     public DataStorage userDataStorage() {
-        return new EspoDataStorage(requestHelper(), config);
+        return new EspoDataStorage(requestHelper(), config.getCacheExpirationMinutes(), config.getBaseUrl());
     }
 
     @Bean

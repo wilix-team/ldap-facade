@@ -54,21 +54,21 @@ public class EspoDataStorage implements DataStorage {
     @Autowired
     EntityParser entityParser;
 
-    public EspoDataStorage(RequestHelper requestHelper, EspoDataStorageConfigurationProperties config) {
+    public EspoDataStorage(RequestHelper requestHelper, int cacheExpirationMinutes, String baseUrl) {
         this.requestHelper = requestHelper;
         users = CacheBuilder.newBuilder()
-                .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
+                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         groups = CacheBuilder.newBuilder()
-                .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
+                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         try {
-            authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
-            searchAllUsersUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/User")
+            authenticateUserUri = new URIBuilder(baseUrl).setPath("/api/v1/App/user").build().toString();
+            searchAllUsersUri = new URIBuilder(baseUrl).setPath("/api/v1/User")
                     .addParameter("select", "emailAddress,teamsIds").build().toString();
-            searchAllGroupsUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/Team").build().toString();
+            searchAllGroupsUri = new URIBuilder(baseUrl).setPath("/api/v1/Team").build().toString();
         } catch (URISyntaxException e) {
             LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
