@@ -39,7 +39,7 @@ public class EntityParser {
      * @param userJsonField Json поле с информацией о пользователе.
      * @return Разобранная информация о пользователе в ожидаемом формате.
      */
-    public Map<String, List<String>> parseUserInfo(JsonNode userJsonField) {
+    Map<String, List<String>> parseUserInfo(JsonNode userJsonField) {
         Map<String, List<String>> info = new HashMap<>();
 
         if (userJsonField != null) {
@@ -91,7 +91,7 @@ public class EntityParser {
      * @param groupJsonNode
      * @return
      */
-    public Map<String, List<String>> parseGroupInfo(JsonNode groupJsonNode) {
+    Map<String, List<String>> parseGroupInfo(JsonNode groupJsonNode) {
         Map<String, List<String>> info = new HashMap<>();
 
         if (groupJsonNode != null) {

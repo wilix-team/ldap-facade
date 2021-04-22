@@ -44,6 +44,7 @@ public class EspoDataStorage implements DataStorage {
     private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
 
     private final RequestHelper requestHelper;
+    private final EntityParser entityParser;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
 
@@ -51,11 +52,10 @@ public class EspoDataStorage implements DataStorage {
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
 
-    @Autowired
-    EntityParser entityParser;
-
-    public EspoDataStorage(RequestHelper requestHelper, int cacheExpirationMinutes, String baseUrl) {
+    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl) {
         this.requestHelper = requestHelper;
+        this.entityParser = entityParser;
+
         users = CacheBuilder.newBuilder()
                 .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
