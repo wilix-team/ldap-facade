@@ -31,9 +31,10 @@ public class EntityParser {
      * Парсинг пользователя из формата ответа от CRM.
      *
      * @param userJsonField Json поле с информацией о пользователе.
+     * @param additionalUserInformationTags дополнительная информация о пользователе идентичная для всех пользователей.
      * @return Разобранная информация о пользователе в ожидаемом формате.
      */
-    static Map<String, List<String>> parseUserInfo(JsonNode userJsonField) {
+    static Map<String, List<String>> parseUserInfo(JsonNode userJsonField, Map<String, List<String>> additionalUserInformationTags) {
         Map<String, List<String>> info = new HashMap<>();
 
         if (userJsonField != null) {
@@ -44,8 +45,6 @@ public class EntityParser {
                     fieldSetter.accept(fieldNode.asText());
                 }
             };
-
-            info.put("company", List.of("WILIX"));
 
             // TODO Нужно формировать display name.
             jsonToUserFieldSetter.accept("id", value -> info.put("id", List.of(value)));
@@ -71,6 +70,11 @@ public class EntityParser {
             jsonToUserFieldSetter.accept("name", vcsName::add);
             jsonToUserFieldSetter.accept("emailAddress", vcsName::add);
             info.put("vcsName", vcsName);
+
+            // добавляются дополнительные свойства пользователя в общее хранилище свойств пользователя
+            for (Map.Entry<String, List<String>> tagInformation : additionalUserInformationTags.entrySet()) {
+                info.put(tagInformation.getKey(), tagInformation.getValue());
+            }
         }
 
         return info;

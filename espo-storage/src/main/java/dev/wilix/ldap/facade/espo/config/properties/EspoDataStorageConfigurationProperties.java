@@ -20,6 +20,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
+import java.util.Map;
 
 @Validated // TODO Добавить зависимость и навесить валидацию для полей.
 @ConfigurationProperties(prefix = "storage.espo")
@@ -28,6 +30,9 @@ public class EspoDataStorageConfigurationProperties {
 
     @NotEmpty
     private String baseUrl;
+
+    @NotEmpty
+    private Map<String, List<String>> additionalUserInformationTags;
 
     public int getCacheExpirationMinutes() {
         return cacheExpirationMinutes;
@@ -43,5 +48,13 @@ public class EspoDataStorageConfigurationProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public Map<String, List<String>> getAdditionalUserInformationTags() {
+        return additionalUserInformationTags;
+    }
+
+    public void setAdditionalUserInformationTags(Map<String, List<String>> additionalUserInformationTags) {
+        this.additionalUserInformationTags = additionalUserInformationTags;
     }
 }

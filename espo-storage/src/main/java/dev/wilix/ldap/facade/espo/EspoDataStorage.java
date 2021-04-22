@@ -45,10 +45,12 @@ public class EspoDataStorage implements DataStorage {
     private final RequestHelper requestHelper;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
+    private final Map<String, List<String>> additionalUserInformationTags;
 
     private final String authenticateUserUri;
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
+
 
     public EspoDataStorage(RequestHelper requestHelper, EspoDataStorageConfigurationProperties config) {
         this.requestHelper = requestHelper;
@@ -59,6 +61,8 @@ public class EspoDataStorage implements DataStorage {
         groups = CacheBuilder.newBuilder()
                 .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
                 .build();
+
+        additionalUserInformationTags = config.getAdditionalUserInformationTags();
 
         try {
             authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
@@ -135,7 +139,7 @@ public class EspoDataStorage implements DataStorage {
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
-        return EntityParser.parseUserInfo(response.get("user"));
+        return EntityParser.parseUserInfo(response.get("user"), additionalUserInformationTags);
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
@@ -163,7 +167,7 @@ public class EspoDataStorage implements DataStorage {
         JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
 
         return StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(EntityParser::parseUserInfo)
+                .map(userJsonNode -> EntityParser.parseUserInfo(userJsonNode, additionalUserInformationTags))
                 .collect(Collectors.toList());
     }
 
