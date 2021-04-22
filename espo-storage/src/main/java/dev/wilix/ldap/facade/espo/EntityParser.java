@@ -77,9 +77,12 @@ public class EntityParser {
             info.put("vcsName", vcsName);
 
             // FIXME Решить вопрос перезатирания записей, когда приходящие атрибуты совпадают со значениями от сервера
-            // добавляются дополнительные свойства пользователя в общее хранилище свойств пользователя
+            //  добавляются дополнительные свойства пользователя в общее хранилище свойств пользователя
             for (Map.Entry<String, List<String>> tagInformation : additionalUserAttributes.entrySet()) {
-                info.put(tagInformation.getKey(), tagInformation.getValue());
+                if ( ! (info.containsKey(tagInformation.getKey()) && info.get(tagInformation.getKey()).equals(tagInformation.getValue())))
+                {
+                    info.put(tagInformation.getKey(), tagInformation.getValue());
+                }
             }
         }
 
