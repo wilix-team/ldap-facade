@@ -20,9 +20,9 @@ import com.unboundid.ldap.listener.LDAPListenerClientConnection;
 import com.unboundid.ldap.listener.LDAPListenerRequestHandler;
 import com.unboundid.ldap.protocol.*;
 import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.controls.AuthorizationIdentityResponseControl;
 import com.unboundid.util.StaticUtils;
 import dev.wilix.ldap.facade.api.Authentication;
@@ -124,7 +124,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     Collections.emptyList());
         }
 
-        List<SearchResultEntry> foundedEntries;
+        List<Entry> foundedEntries;
         try {
             foundedEntries = searchOperationProcessor.doSearch(authentication, request);
 
@@ -148,9 +148,9 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
         }
 
         // Отправка информации о записях.
-        for (SearchResultEntry resultEntry : foundedEntries) {
+        for (Entry resultEntry : foundedEntries) {
             try {
-                connection.sendSearchResultEntry(messageID, resultEntry, resultEntry.getControls());
+                connection.sendSearchResultEntry(messageID, resultEntry);
             } catch (final LDAPException ex) {
                 LOG.warn("There is problems with send result ldap entry.", ex);
                 return new LDAPMessage(messageID,

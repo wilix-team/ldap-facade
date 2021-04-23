@@ -18,20 +18,16 @@ package dev.wilix.ldap.facade.server.processing;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.unboundid.ldap.listener.SearchEntryParer;
 import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.SearchResultEntry;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -48,7 +44,7 @@ public class SearchOperationProcessor {
     private final DataStorage dataStorage;
     private final LdapNamingHelper namingHelper;
 
-    private final Cache<Authentication, List<SearchResultEntry>> entitiesCache;
+    private final Cache<Authentication, List<Entry>> entitiesCache;
 
     public SearchOperationProcessor(DataStorage dataStorage, LdapNamingHelper namingHelper, int searchCacheExpirationMinutes) {
         this.dataStorage = dataStorage;
@@ -59,27 +55,25 @@ public class SearchOperationProcessor {
                 .build();
     }
 
-    List<SearchResultEntry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
+    List<Entry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
 
-        // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
-        List<SearchResultEntry> allEntries;
+        List<Entry> allEntries;
         try {
             allEntries = entitiesCache.get(authentication, () -> doSearchInternal(authentication).stream()
                     .map(info -> prepareSearchResultEntry(info.get("dn").get(0), info))
                     .collect(Collectors.toList()));
         } catch (ExecutionException e) {
+            // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
             throw new RuntimeException(e.getCause());
         }
 
-        List<SearchResultEntry> resultEntries = new ArrayList<>(allEntries.size());
-
-        // FIXME Нужно как-то переработать, что-бы не отправлять лишние атрибуты.
-        //       Но пока работает -_-
-        for (SearchResultEntry resultEntry : allEntries) {
+        List<Entry> resultEntries = new ArrayList<>(allEntries.size());
+        SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
+        for (Entry resultEntry : allEntries) {
             // Фильтруем записи в соответствие с запросом.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
-                resultEntries.add(resultEntry);
+                resultEntries.add(parer.pareEntry(resultEntry));
             } else {
                 LOG.debug("Entry not matches {} to filter {}", resultEntry, request.getFilter());
             }
@@ -105,9 +99,9 @@ public class SearchOperationProcessor {
     /**
      * Постобработка полученной из хранилища записи.
      * На текущий момент:
-     *      - добавляется dn атрибут, если нету
-     *      - преобразуется формат имени участников в dn
-     *      - добавляется атрибут с классом объекта.
+     * - добавляется dn атрибут, если нету
+     * - преобразуется формат имени участников в dn
+     * - добавляется атрибут с классом объекта.
      */
     private Map<String, List<String>> postProcessUserEntryInfo(Map<String, List<String>> info) {
         // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
@@ -134,9 +128,9 @@ public class SearchOperationProcessor {
     /**
      * Постобработка полученной из хранилища записи.
      * На текущий момент:
-     *      - добавляется dn атрибут, если нету
-     *      - преобразуется формат имени участников в dn
-     *      - добавляется атрибут с классом объекта.
+     * - добавляется dn атрибут, если нету
+     * - преобразуется формат имени участников в dn
+     * - добавляется атрибут с классом объекта.
      */
     private Map<String, List<String>> postProcessGroupEntryInfo(Map<String, List<String>> info) {
         // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
@@ -159,7 +153,7 @@ public class SearchOperationProcessor {
         return processedInfo;
     }
 
-    private SearchResultEntry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
+    private Entry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
         // Подготовка ответа в формате ldap.
         Entry entry = new Entry(entryDn);
         for (String requestedAttributeName : info.keySet()) {
@@ -168,6 +162,6 @@ public class SearchOperationProcessor {
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
 
-        return new SearchResultEntry(entry);
+        return entry;
     }
 }
