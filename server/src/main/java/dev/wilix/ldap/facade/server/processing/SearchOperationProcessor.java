@@ -69,6 +69,7 @@ public class SearchOperationProcessor {
         }
 
         List<SearchResultEntry> resultEntries = new ArrayList<>(allEntries.size());
+        SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
 
         // FIXME Нужно как-то переработать, что-бы не отправлять лишние атрибуты.
         //       Но пока работает -_-
@@ -76,13 +77,7 @@ public class SearchOperationProcessor {
             // Фильтруем записи в соответствие с запросом.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
-                if (request.getAttributes().isEmpty()) {
-                    resultEntries.add(resultEntry);
-                } else {
-                    SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
-                    SearchResultEntry resultEntryWithCertainAttributes = new SearchResultEntry(parer.pareEntry(resultEntry));
-                    resultEntries.add(resultEntryWithCertainAttributes);
-                }
+                resultEntries.add(new SearchResultEntry(parer.pareEntry(resultEntry)));
             } else {
                 LOG.debug("Entry not matches {} to filter {}", resultEntry, request.getFilter());
             }
@@ -108,9 +103,9 @@ public class SearchOperationProcessor {
     /**
      * Постобработка полученной из хранилища записи.
      * На текущий момент:
-     *      - добавляется dn атрибут, если нету
-     *      - преобразуется формат имени участников в dn
-     *      - добавляется атрибут с классом объекта.
+     * - добавляется dn атрибут, если нету
+     * - преобразуется формат имени участников в dn
+     * - добавляется атрибут с классом объекта.
      */
     private Map<String, List<String>> postProcessUserEntryInfo(Map<String, List<String>> info) {
         // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
@@ -137,9 +132,9 @@ public class SearchOperationProcessor {
     /**
      * Постобработка полученной из хранилища записи.
      * На текущий момент:
-     *      - добавляется dn атрибут, если нету
-     *      - преобразуется формат имени участников в dn
-     *      - добавляется атрибут с классом объекта.
+     * - добавляется dn атрибут, если нету
+     * - преобразуется формат имени участников в dn
+     * - добавляется атрибут с классом объекта.
      */
     private Map<String, List<String>> postProcessGroupEntryInfo(Map<String, List<String>> info) {
         // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
