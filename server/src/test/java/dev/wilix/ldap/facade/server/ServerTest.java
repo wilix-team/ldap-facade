@@ -219,7 +219,7 @@ public class ServerTest {
     }
 
     @Test
-    public void searchUsersAndReceiveCertainAttributes() throws LDAPException {
+    public void searchUsersAndReceiveThemWithCertainAttributes() throws LDAPException {
         BindResult bindResult;
         SearchResult searchResult;
         String[] attributes = {"uid", "telephoneNumber", "mail", "company"};
@@ -233,7 +233,7 @@ public class ServerTest {
     }
 
     @Test
-    public void searchGroupsAndReceiveCertainAttributes() throws LDAPException {
+    public void searchGroupsAndReceiveThemWithCertainAttributes() throws LDAPException {
         BindResult bindResult;
         SearchResult searchResult;
         String[] attributes = {"uid", "id", "cn"};
@@ -247,7 +247,7 @@ public class ServerTest {
     }
 
     @Test
-    public void searchAllEntityAndReceiveCertainAttributes() throws LDAPException {
+    public void searchAllEntityAndReceiveThemWithCertainAttributes() throws LDAPException {
         BindResult bindResult;
         SearchResult searchResult;
         String[] attributes = {"uid", "cn", "id"};
