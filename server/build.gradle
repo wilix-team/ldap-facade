@@ -1,31 +1,23 @@
 plugins {
     id 'org.springframework.boot' version '2.3.5.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
 }
 
 description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
 
 dependencies {
-    implementation project(':api')
-
+    implementation platform('org.springframework.boot:spring-boot-dependencies:2.3.5.RELEASE')
     implementation 'org.springframework.boot:spring-boot-starter'
 
+    api project(':api')
+
     // Хранилища
-    implementation project(':espo-storage')
-    implementation project(':file-storage')
+    api project(':espo-storage')
+    api project(':file-storage')
 
-    // Дублирование определения зависимости делается для
-    // предоставления информации о ней для тестов в других модулях.
-    // см. https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
-
-    implementation 'com.unboundid:unboundid-ldapsdk:5.1.1'
-    testFixturesApi 'com.unboundid:unboundid-ldapsdk:5.1.1'
+    api 'com.unboundid:unboundid-ldapsdk:5.1.1'
 
     implementation 'org.apache.commons:commons-text:1.9'
-    testFixturesApi 'org.apache.commons:commons-text:1.9'
-
     implementation 'com.google.guava:guava:30.0-jre'
-    testFixturesApi 'com.google.guava:guava:30.0-jre'
 
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.11.3'
 
