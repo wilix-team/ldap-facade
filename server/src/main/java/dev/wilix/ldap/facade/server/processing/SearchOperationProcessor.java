@@ -22,7 +22,6 @@ import com.unboundid.ldap.listener.SearchEntryParer;
 import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.SearchResultEntry;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 import org.slf4j.Logger;
@@ -45,7 +44,7 @@ public class SearchOperationProcessor {
     private final DataStorage dataStorage;
     private final LdapNamingHelper namingHelper;
 
-    private final Cache<Authentication, List<SearchResultEntry>> entitiesCache;
+    private final Cache<Authentication, List<Entry>> entitiesCache;
 
     public SearchOperationProcessor(DataStorage dataStorage, LdapNamingHelper namingHelper, int searchCacheExpirationMinutes) {
         this.dataStorage = dataStorage;
@@ -56,28 +55,25 @@ public class SearchOperationProcessor {
                 .build();
     }
 
-    List<SearchResultEntry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
+    List<Entry> doSearch(Authentication authentication, SearchRequestProtocolOp request) throws LDAPException {
 
-        // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
-        List<SearchResultEntry> allEntries;
+        List<Entry> allEntries;
         try {
             allEntries = entitiesCache.get(authentication, () -> doSearchInternal(authentication).stream()
                     .map(info -> prepareSearchResultEntry(info.get("dn").get(0), info))
                     .collect(Collectors.toList()));
         } catch (ExecutionException e) {
+            // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
             throw new RuntimeException(e.getCause());
         }
 
-        List<SearchResultEntry> resultEntries = new ArrayList<>(allEntries.size());
+        List<Entry> resultEntries = new ArrayList<>(allEntries.size());
         SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
-
-        // FIXME Нужно как-то переработать, что-бы не отправлять лишние атрибуты.
-        //       Но пока работает -_-
-        for (SearchResultEntry resultEntry : allEntries) {
+        for (Entry resultEntry : allEntries) {
             // Фильтруем записи в соответствие с запросом.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
-                resultEntries.add(new SearchResultEntry(parer.pareEntry(resultEntry)));
+                resultEntries.add(parer.pareEntry(resultEntry));
             } else {
                 LOG.debug("Entry not matches {} to filter {}", resultEntry, request.getFilter());
             }
@@ -157,7 +153,7 @@ public class SearchOperationProcessor {
         return processedInfo;
     }
 
-    private SearchResultEntry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
+    private Entry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
         // Подготовка ответа в формате ldap.
         Entry entry = new Entry(entryDn);
         for (String requestedAttributeName : info.keySet()) {
@@ -166,6 +162,6 @@ public class SearchOperationProcessor {
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
 
-        return new SearchResultEntry(entry);
+        return entry;
     }
 }
