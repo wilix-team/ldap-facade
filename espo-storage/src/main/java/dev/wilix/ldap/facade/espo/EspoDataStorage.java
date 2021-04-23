@@ -25,6 +25,7 @@ import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfiguration
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -43,6 +44,7 @@ public class EspoDataStorage implements DataStorage {
     private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
 
     private final RequestHelper requestHelper;
+    private final EntityParser entityParser;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
 
@@ -50,21 +52,23 @@ public class EspoDataStorage implements DataStorage {
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
 
-    public EspoDataStorage(RequestHelper requestHelper, EspoDataStorageConfigurationProperties config) {
+    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl) {
         this.requestHelper = requestHelper;
+        this.entityParser = entityParser;
+
         users = CacheBuilder.newBuilder()
-                .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
+                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         groups = CacheBuilder.newBuilder()
-                .expireAfterAccess(config.getCacheExpirationMinutes(), TimeUnit.MINUTES)
+                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         try {
-            authenticateUserUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/App/user").build().toString();
-            searchAllUsersUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/User")
+            authenticateUserUri = new URIBuilder(baseUrl).setPath("/api/v1/App/user").build().toString();
+            searchAllUsersUri = new URIBuilder(baseUrl).setPath("/api/v1/User")
                     .addParameter("select", "emailAddress,teamsIds").build().toString();
-            searchAllGroupsUri = new URIBuilder(config.getBaseUrl()).setPath("/api/v1/Team").build().toString();
+            searchAllGroupsUri = new URIBuilder(baseUrl).setPath("/api/v1/Team").build().toString();
         } catch (URISyntaxException e) {
             LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
@@ -135,13 +139,13 @@ public class EspoDataStorage implements DataStorage {
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
-        return EntityParser.parseUserInfo(response.get("user"));
+        return entityParser.parseUserInfo(response.get("user"));
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(searchAllGroupsUri, authentication);
         List<Map<String, List<String>>> groups = StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(EntityParser::parseGroupInfo)
+                .map(entityParser::parseGroupInfo)
                 .collect(Collectors.toList());
 
         // FIXME Подумать, что делать с таким явным объявление названий атрибутов.
@@ -163,7 +167,7 @@ public class EspoDataStorage implements DataStorage {
         JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
 
         return StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(EntityParser::parseUserInfo)
+                .map(entityParser::parseUserInfo)
                 .collect(Collectors.toList());
     }
 
