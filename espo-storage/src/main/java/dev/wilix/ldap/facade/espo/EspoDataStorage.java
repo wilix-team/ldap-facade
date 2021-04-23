@@ -145,7 +145,7 @@ public class EspoDataStorage implements DataStorage {
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
         JsonNode response = requestHelper.sendCrmRequest(searchAllGroupsUri, authentication);
         List<Map<String, List<String>>> groups = StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(groupJsonField -> entityParser.parseGroupInfo(groupJsonField))
+                .map(entityParser::parseGroupInfo)
                 .collect(Collectors.toList());
 
         // FIXME Подумать, что делать с таким явным объявление названий атрибутов.
@@ -167,7 +167,7 @@ public class EspoDataStorage implements DataStorage {
         JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
 
         return StreamSupport.stream(response.get("list").spliterator(), false)
-                .map(userJsonField -> entityParser.parseUserInfo(userJsonField))
+                .map(entityParser::parseUserInfo)
                 .collect(Collectors.toList());
     }
 
