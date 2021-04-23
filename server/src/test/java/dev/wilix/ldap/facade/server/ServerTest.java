@@ -70,7 +70,7 @@ public class ServerTest {
         SearchResult searchResult;
         try (LDAPConnection ldap = openLDAP()) {
             bindResult = userBindResult(ldap);
-            searchResult = ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
+            searchResult = ldap.search(BASE_DN, SearchScope.SUB, "(uid=*)");
         }
 
         checkSearchResults(4, bindResult, searchResult);
@@ -166,7 +166,7 @@ public class ServerTest {
         SearchResult searchResult;
         try (LDAPConnection ldap = openLDAP()) {
             bindResult = userBindResult(ldap);
-            searchResult = ldap.search("dc=example,dc=com", SearchScope.SUB, "(objectClass=organizationalPerson)");
+            searchResult = ldap.search(BASE_DN, SearchScope.SUB, "(objectClass=organizationalPerson)");
         }
 
         checkSearchResults(2, bindResult, searchResult);
@@ -178,7 +178,7 @@ public class ServerTest {
         SearchResult searchResult;
         try (LDAPConnection ldap = openLDAP()) {
             bindResult = userBindResult(ldap);
-            searchResult = ldap.search("dc=example,dc=com", SearchScope.SUB, "(objectClass=groupOfNames)");
+            searchResult = ldap.search(BASE_DN, SearchScope.SUB, "(objectClass=groupOfNames)");
         }
 
         checkSearchResults(2, bindResult, searchResult);
@@ -190,7 +190,7 @@ public class ServerTest {
         SearchResult searchResult;
         try (LDAPConnection ldap = openLDAP()) {
             bindResult = userBindResult(ldap);
-            searchResult = ldap.search("dc=example,dc=com", SearchScope.SUB, "(dn=uid=groupOne,ou=groups,dc=example,dc=com)");
+            searchResult = ldap.search(BASE_DN, SearchScope.SUB, "(dn=uid=groupOne,ou=groups,dc=example,dc=com)");
         }
 
         checkSearchResults(1, bindResult, searchResult);
@@ -199,7 +199,7 @@ public class ServerTest {
     @Test
     public void searchAllEntityWithoutAuthentication() {
         try (LDAPConnection ldap = openLDAP()) {
-            ldap.search("dc=example,dc=com", SearchScope.SUB, "(uid=*)");
+            ldap.search(BASE_DN, SearchScope.SUB, "(uid=*)");
         } catch (LDAPException e) {
             assertEquals(49, e.getResultCode().intValue());
             assertEquals("Incorrect credentials or access rights.", e.getDiagnosticMessage());
@@ -216,6 +216,47 @@ public class ServerTest {
         }
 
         checkSearchResults(1, bindResult, searchResult);
+    }
+
+    @Test
+    public void searchUsersAndReceiveCertainAttributes() throws LDAPException {
+        BindResult bindResult;
+        SearchResult searchResult;
+        String[] attributes = {"uid", "telephoneNumber", "mail", "company"};
+
+        try (LDAPConnection ldap = openLDAP()) {
+            bindResult = userBindResult(ldap);
+            searchResult = ldap.search(USER_BASE_DN, SearchScope.SUB, ("(uid=*)"), attributes);
+        }
+
+        checkSearchResults(2, bindResult, searchResult, attributes);
+    }
+
+    @Test
+    public void searchGroupsAndReceiveCertainAttributes() throws LDAPException {
+        BindResult bindResult;
+        SearchResult searchResult;
+        String[] attributes = {"uid", "id", "cn"};
+
+        try (LDAPConnection ldap = openLDAP()) {
+            bindResult = userBindResult(ldap);
+            searchResult = ldap.search(GROUP_BASE_DN, SearchScope.SUB, ("(uid=*)"), attributes);
+        }
+
+        checkSearchResults(2, bindResult, searchResult, attributes);
+    }
+
+    @Test
+    public void searchAllEntityAndReceiveCertainAttributes() throws LDAPException {
+        BindResult bindResult;
+        SearchResult searchResult;
+        String[] attributes = {"uid", "cn", "id"};
+        try (LDAPConnection ldap = openLDAP()) {
+            bindResult = userBindResult(ldap);
+            searchResult = ldap.search(BASE_DN, SearchScope.SUB, "(uid=*)", attributes);
+        }
+
+        checkSearchResults(4, bindResult, searchResult, attributes);
     }
 
     private LDAPConnection openLDAP() throws LDAPException {
@@ -249,6 +290,14 @@ public class ServerTest {
         LDAPTestUtils.assertEntriesReturnedEquals(searchResult, numberOfExpectReceiveEntries);
 
         searchResult.getSearchEntries().forEach(searchEntry -> checkResultEntity(searchEntry, searchEntry.getAttribute("objectClass").getValue()));
+    }
+
+    private void checkSearchResults(int numberOfExpectReceiveEntries, BindResult bindResult, SearchResult searchResult, String[] attributes) {
+        LDAPTestUtils.assertResultCodeEquals(bindResult, ResultCode.SUCCESS);
+        LDAPTestUtils.assertResultCodeEquals(searchResult, ResultCode.SUCCESS);
+        LDAPTestUtils.assertEntriesReturnedEquals(searchResult, numberOfExpectReceiveEntries);
+
+        searchResult.getSearchEntries().forEach(searchEntry -> checkSearchResultEntryAttributes(searchEntry, attributes));
     }
 
     private void checkResultEntity(SearchResultEntry entry, String objectClass) {

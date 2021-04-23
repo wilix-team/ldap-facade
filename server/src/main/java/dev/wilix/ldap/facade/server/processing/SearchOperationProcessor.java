@@ -18,6 +18,7 @@ package dev.wilix.ldap.facade.server.processing;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.unboundid.ldap.listener.SearchEntryParer;
 import com.unboundid.ldap.protocol.SearchRequestProtocolOp;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -27,11 +28,7 @@ import dev.wilix.ldap.facade.api.DataStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -79,7 +76,13 @@ public class SearchOperationProcessor {
             // Фильтруем записи в соответствие с запросом.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
-                resultEntries.add(resultEntry);
+                if (request.getAttributes().isEmpty()) {
+                    resultEntries.add(resultEntry);
+                } else {
+                    SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
+                    SearchResultEntry resultEntryWithCertainAttributes = new SearchResultEntry(parer.pareEntry(resultEntry));
+                    resultEntries.add(resultEntryWithCertainAttributes);
+                }
             } else {
                 LOG.debug("Entry not matches {} to filter {}", resultEntry, request.getFilter());
             }

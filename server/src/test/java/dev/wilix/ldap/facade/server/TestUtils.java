@@ -8,6 +8,7 @@ class TestUtils {
     static final String NAME_OF_SERVICE = "serviceName";
     static final String TOKEN_OF_SERVICE = "token";
 
+    static final String BASE_DN = "dc=example,dc=com";
     static final String USER_BASE_DN = "ou=people,dc=example,dc=com";
     static final String GROUP_BASE_DN = "ou=groups,dc=example,dc=com";
     static final String SERVICE_BASE_DN = "ou=services,dc=example,dc=com";
