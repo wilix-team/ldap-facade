@@ -57,12 +57,8 @@ public class LdapNamingHelper {
         return serviceEntryDnPattern.matcher(dn).matches();
     }
 
-    String getUserClassName() {
-        return ldapProperties.getUserClassName();
-    }
-
-    String getGroupClassName() {
-        return ldapProperties.getGroupClassName();
+    String getClassName(EntityType entityType) {
+        return entityType.equals(EntityType.USER) ? ldapProperties.getUserClassName() : ldapProperties.getGroupClassName();
     }
 
     String extractUserNameFromDn(String userDn) {
@@ -73,28 +69,16 @@ public class LdapNamingHelper {
         return firstGroupFromPattern(serviceEntryDnPattern, serviceDn);
     }
 
-    String generateDnForUserEntry(Map<String, List<String>> userEntry) {
+    String generateDnForEntry(Map<String, List<String>> entry, EntityType entityType) {
 
         // FIXME Требуются проверки на корректные значения каждого промежуточного объекта.
-        String userName = userEntry.get(ldapProperties.getMainNameAttribute()).get(0);
+        String entityName = entry.get(ldapProperties.getMainNameAttribute()).get(0);
 
-        return String.format(userNameToDnTemplate, userName);
+        return String.format(entityType.equals(EntityType.USER) ? userNameToDnTemplate : groupNameToDnTemplate, entityName);
     }
 
-    String generateDnForUserEntryFromAttribute(String entryName) {
-        return String.format(userNameToDnTemplate, entryName);
-    }
-
-    String generateDnForGroupEntry(Map<String, List<String>> groupEntry) {
-
-        // FIXME Требуются проверки на корректные значения каждого промежуточного объекта.
-        String userName = groupEntry.get(ldapProperties.getMainNameAttribute()).get(0);
-
-        return String.format(groupNameToDnTemplate, userName);
-    }
-
-    String generateDnForGroupEntryFromAttribute(String entryName) {
-        return String.format(groupNameToDnTemplate, entryName);
+    String generateDnForEntryFromAttribute(String entryName, EntityType entityType) {
+        return String.format(entityType.equals(EntityType.USER) ? userNameToDnTemplate : groupNameToDnTemplate, entryName);
     }
 
     private static String firstGroupFromPattern(Pattern regExpPattern, String valueToScan) {

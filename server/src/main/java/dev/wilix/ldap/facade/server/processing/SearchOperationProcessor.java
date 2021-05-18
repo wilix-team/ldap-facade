@@ -86,11 +86,11 @@ public class SearchOperationProcessor {
         List<Map<String, List<String>>> result = new ArrayList<>();
 
         dataStorage.getAllUsers(authentication).stream()
-                .map(this::postProcessUserEntryInfo)
+                 .map(user -> postProcessEntryInfo(user, EntityType.USER))
                 .forEach(result::add);
 
         dataStorage.getAllGroups(authentication).stream()
-                .map(this::postProcessGroupEntryInfo)
+                .map(group -> postProcessEntryInfo(group, EntityType.GROUP))
                 .forEach(result::add);
 
         return result;
@@ -100,57 +100,31 @@ public class SearchOperationProcessor {
      * Постобработка полученной из хранилища записи.
      * На текущий момент:
      * - добавляется dn атрибут, если нету
-     * - преобразуется формат имени участников в dn
+     * - преобразуется формат имени группы/участника в dn
      * - добавляется атрибут с классом объекта.
      */
-    private Map<String, List<String>> postProcessUserEntryInfo(Map<String, List<String>> info) {
+    private Map<String, List<String>> postProcessEntryInfo(Map<String, List<String>> info, EntityType entityType) {
         // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
         var processedInfo = new HashMap<>(info);
 
-        // Переводим имена участников в формат dn
-        if (info.containsKey("memberof")) {
-            // Переводим формат из имени группы в dn группы.
-            List<String> memberOfWithDn = info.get("memberof").stream()
-                    .map(namingHelper::generateDnForGroupEntryFromAttribute)
-                    .collect(Collectors.toList());
-            processedInfo.put("memberof", memberOfWithDn);
-        }
-
+        // Преобразуем имена групп/участников в dn
+        addDnName(processedInfo, entityType);
         // Вычисляем dn если его не добавили ранее.
-        processedInfo.computeIfAbsent("dn", s -> List.of(namingHelper.generateDnForUserEntry(info)));
+        processedInfo.computeIfAbsent("dn", s -> List.of(namingHelper.generateDnForEntry(info, entityType)));
         // Проставляем класс объекта, если его еще нет.
-        processedInfo.computeIfAbsent("objectClass", s -> List.of(namingHelper.getUserClassName()));
-        processedInfo.computeIfAbsent("objectclass", s -> List.of(namingHelper.getUserClassName()));
+        processedInfo.computeIfAbsent("objectClass", s -> List.of(namingHelper.getClassName(entityType)));
 
         return processedInfo;
     }
 
-    /**
-     * Постобработка полученной из хранилища записи.
-     * На текущий момент:
-     * - добавляется dn атрибут, если нету
-     * - преобразуется формат имени участников в dn
-     * - добавляется атрибут с классом объекта.
-     */
-    private Map<String, List<String>> postProcessGroupEntryInfo(Map<String, List<String>> info) {
-        // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
-        var processedInfo = new HashMap<>(info);
+    private void addDnName(Map<String, List<String>> info, EntityType entityType) {
+        String key = entityType.equals(EntityType.USER) ? "memberof" : "member";
 
-        if (info.containsKey("member")) {
-            // Переводим формат из имени группы в dn группы.
-            List<String> memberOfWithDn = info.get("member").stream()
-                    .map(namingHelper::generateDnForUserEntryFromAttribute)
-                    .collect(Collectors.toList());
-            processedInfo.put("member", memberOfWithDn);
-        }
-
-        // Вычисляем dn если его не добавили ранее.
-        processedInfo.computeIfAbsent("dn", s -> List.of(namingHelper.generateDnForGroupEntry(info)));
-        // Проставляем класс объекта, если его еще нет.
-        processedInfo.computeIfAbsent("objectClass", s -> List.of(namingHelper.getGroupClassName()));
-        processedInfo.computeIfAbsent("objectclass", s -> List.of(namingHelper.getGroupClassName()));
-
-        return processedInfo;
+        List<String> result = info.get(key).stream()
+                .map(value -> namingHelper.generateDnForEntryFromAttribute(value,
+                        entityType.equals(EntityType.USER) ? EntityType.GROUP : EntityType.USER))
+                .collect(Collectors.toList());
+        info.put(key, result);
     }
 
     private Entry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
