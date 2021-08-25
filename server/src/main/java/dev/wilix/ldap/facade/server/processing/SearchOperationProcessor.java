@@ -136,6 +136,10 @@ public class SearchOperationProcessor {
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
         }
 
+        // TODO 1. Проверить наличие аватара (jpegPhoto)
+        // TODO 2. Если аватар есть, то взять исходный аватар из из строки превратить в массив байт
+        // TODO 3. Заменить в entry строковое значение на массив байт. (entry.setAttribute)
+
         return entry;
     }
 }

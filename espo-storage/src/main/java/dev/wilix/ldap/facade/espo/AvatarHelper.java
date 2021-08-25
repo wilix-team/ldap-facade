@@ -1,78 +1,48 @@
 package dev.wilix.ldap.facade.espo;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.HttpHeaders;
 import dev.wilix.ldap.facade.api.Authentication;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
 import java.util.Base64;
 
 public class AvatarHelper {
 
     private final static Logger LOG = LoggerFactory.getLogger(AvatarHelper.class);
 
-    private final HttpClient httpClient;
-    private final ObjectMapper objectMapper;
+    private final String searchAvatarBaseUri;
+    private final RequestHelper requestHelper;
 
-    public AvatarHelper(HttpClient httpClient, ObjectMapper objectMapper) {
-        this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
-    }
+    public AvatarHelper(String baseUrl, RequestHelper requestHelper) {
+        this.requestHelper = requestHelper;
 
-    //"метод возвращает массив байт" sendCrmRequest(String url, Authentication authentication) {
-    //    return sendCrmRequest(prepareCrmRequest(url, authentication));
-    //}
-
-    //private "метод возвращает массив байт" sendCrmRequest(HttpRequest request) {
-    //  HttpResponse<String> response;
-    //
-    //}
-
-
-
-    static HttpRequest prepareCrmRequest(String url, Authentication authentication) {
-        if (authentication instanceof ServiceAuthentication) {
-            return prepareRequestWithServiceCreds(url, (ServiceAuthentication) authentication);
-        } else if (authentication instanceof UserAuthentication) {
-            return prepareRequestWithUserCreds(url, (UserAuthentication) authentication);
+        try {
+            searchAvatarBaseUri = new URIBuilder(baseUrl).addParameter("entryPoint", "avatar" ).addParameter("size", "small").build().toString();
+        } catch (URISyntaxException e) {
+            LOG.debug("Problem with URIBuilder:", e);
+            throw new IllegalStateException("Problem with URIBuilder", e);
         }
-
-        throw new IllegalStateException("Not expected authentication to prepare CRM request" + authentication);
     }
 
-    static HttpRequest prepareRequestWithUserCreds(String url, UserAuthentication authentication) {
-        HttpRequest.Builder request = prepareBasicCrmRequest(url);
-
-        String password = authentication.getPassword();
-        String userName = authentication.getUserName();
-        String base64Credentials = Base64.getEncoder()
-                .encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + base64Credentials);
-
-        return request.build();
+    public String getAvatarByUserId(String id, Authentication authentication) {
+        String avatarUri;
+        try {
+            avatarUri = new URIBuilder(searchAvatarBaseUri).addParameter("id", id).build().toString();
+        } catch (URISyntaxException e) {
+            LOG.debug("Problem with URIBuilder:", e);
+            throw new IllegalStateException("Problem with URIBuilder", e);
+        }
+        return convertByteArrayToString(requestHelper.sendCrmRequestOfImage(avatarUri, authentication));
     }
 
-    static HttpRequest prepareRequestWithServiceCreds(String url, ServiceAuthentication authentication) {
-        HttpRequest.Builder request = prepareBasicCrmRequest(url);
-
-        String token = authentication.getToken();
-        request.setHeader("X-Api-Key", token);
-
-        return request.build();
+    public static String convertByteArrayToString(byte[] input) {
+        if (input == null) {
+            LOG.debug("Array of image is null.");
+            throw new IllegalArgumentException("Array of image is null.");
+        }
+        return Base64.getEncoder().encodeToString(input);
     }
 
-    private static HttpRequest.Builder prepareBasicCrmRequest(String requestUri) {
-        return HttpRequest.newBuilder()
-                .GET()
-                .uri(URI.create(requestUri))
-                .setHeader("User-Agent", "ldap-facade")
-                .setHeader("Content-Type", "application/json; charset=utf-8");
-    }
 }

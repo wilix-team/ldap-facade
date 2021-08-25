@@ -47,6 +47,35 @@ public class RequestHelper {
         return sendCrmRequest(prepareCrmRequest(url, authentication));
     }
 
+    byte[] sendCrmRequestOfImage(String url, Authentication authentication) {
+        return sendCrmRequestOfImage(prepareCrmRequest(url, authentication));
+    }
+
+    // TODO Убарть повторяемы код (см. sendCrmRequest)
+    private byte[] sendCrmRequestOfImage(HttpRequest request) {
+        HttpResponse<byte[]> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException | InterruptedException ex) {
+            throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
+        }
+
+        LOG.debug("Receive response from CRM: {}", response.body());
+
+        if (response.statusCode() == 401 || response.statusCode() == 403) {
+            LOG.warn("For request {} received UNAUTHORIZED response", request);
+            throw new IllegalStateException("Incorrect credentials or access rights!");
+        }
+
+        if (response.statusCode() != 200) {
+            LOG.warn("For request {} receive bad response from CRM {}", request, response);
+            throw new IllegalStateException("Get bad request from CRM!");
+        }
+
+        return response.body();
+    }
+
+
     private JsonNode sendCrmRequest(HttpRequest request) {
         HttpResponse<String> response;
         try {

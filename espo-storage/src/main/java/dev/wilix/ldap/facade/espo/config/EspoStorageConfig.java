@@ -18,6 +18,7 @@ package dev.wilix.ldap.facade.espo.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.wilix.ldap.facade.api.DataStorage;
+import dev.wilix.ldap.facade.espo.AvatarHelper;
 import dev.wilix.ldap.facade.espo.EntityParser;
 import dev.wilix.ldap.facade.espo.EspoDataStorage;
 import dev.wilix.ldap.facade.espo.RequestHelper;
@@ -48,6 +49,11 @@ public class EspoStorageConfig {
     @Bean
     public RequestHelper requestHelper() {
         return new RequestHelper(httpClient(), objectMapper());
+    }
+
+    @Bean
+    public AvatarHelper avatarHelper() {
+        return new AvatarHelper(config.getBaseUrl(), requestHelper());
     }
 
     @Bean
