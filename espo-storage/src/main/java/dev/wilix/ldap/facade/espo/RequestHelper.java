@@ -51,26 +51,16 @@ public class RequestHelper {
         return sendCrmRequestOfImage(prepareCrmRequest(url, authentication));
     }
 
-    // TODO Убарть повторяемы код (см. sendCrmRequest)
     private byte[] sendCrmRequestOfImage(HttpRequest request) {
         HttpResponse<byte[]> response;
+
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException | InterruptedException ex) {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        LOG.debug("Receive response from CRM: {}", response.body());
-
-        if (response.statusCode() == 401 || response.statusCode() == 403) {
-            LOG.warn("For request {} received UNAUTHORIZED response", request);
-            throw new IllegalStateException("Incorrect credentials or access rights!");
-        }
-
-        if (response.statusCode() != 200) {
-            LOG.warn("For request {} receive bad response from CRM {}", request, response);
-            throw new IllegalStateException("Get bad request from CRM!");
-        }
+        checkAccess(request);
 
         return response.body();
     }
@@ -84,6 +74,24 @@ public class RequestHelper {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
+        checkAccess(request);
+
+        try {
+            return objectMapper.readTree(response.body());
+        } catch (Exception e) {
+            LOG.warn("Cant save {} info {}", request, response.body());
+            throw new IllegalStateException("Can't properly parse CRM response.", e);
+        }
+    }
+
+    private void checkAccess(HttpRequest request) {
+        HttpResponse<Void> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+        } catch (IOException | InterruptedException ex) {
+            throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
+        }
+
         LOG.debug("Receive response from CRM: {}", response.body());
 
         if (response.statusCode() == 401 || response.statusCode() == 403) {
@@ -94,13 +102,6 @@ public class RequestHelper {
         if (response.statusCode() != 200) {
             LOG.warn("For request {} receive bad response from CRM {}", request, response);
             throw new IllegalStateException("Get bad request from CRM!");
-        }
-
-        try {
-            return objectMapper.readTree(response.body());
-        } catch (Exception e) {
-            LOG.warn("Cant save {} info {}", request, response.body());
-            throw new IllegalStateException("Can't properly parse CRM response.", e);
         }
     }
 
