@@ -51,7 +51,7 @@ public class SearchOperationProcessor {
         this.namingHelper = namingHelper;
 
         entitiesCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(searchCacheExpirationMinutes, TimeUnit.MINUTES)
+                .expireAfterWrite(searchCacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
     }
 
