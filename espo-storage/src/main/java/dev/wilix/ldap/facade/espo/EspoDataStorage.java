@@ -42,6 +42,9 @@ import java.util.stream.StreamSupport;
 public class EspoDataStorage implements DataStorage {
     // TODO Нужно добавить проверку у пользователей на флаг isActive
     private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
+    private static final String USER_AVATAR_PROPERTY_NAME = "jpegPhoto";
+
+    private boolean loadUsersAvatars;
 
     private final RequestHelper requestHelper;
     private final AvatarHelper avatarHelper;
@@ -54,10 +57,12 @@ public class EspoDataStorage implements DataStorage {
     private final String searchAllGroupsUri;
 
 
-    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl) {
+    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl, boolean loadUsersAvatars) {
         this.requestHelper = requestHelper;
         this.avatarHelper = new AvatarHelper(baseUrl, requestHelper);
         this.entityParser = entityParser;
+
+        this.loadUsersAvatars = loadUsersAvatars;
 
         users = CacheBuilder.newBuilder()
                 .expireAfterWrite(cacheExpirationMinutes, TimeUnit.MINUTES)
@@ -174,7 +179,9 @@ public class EspoDataStorage implements DataStorage {
                 .map(entityParser::parseUserInfo)
                 .collect(Collectors.toList());
 
-        users.forEach(user -> user.put("jpegPhoto", List.of(avatarHelper.getAvatarByUserId(user.get("id").get(0), authentication))));
+        if (loadUsersAvatars) {
+            users.forEach(user -> user.put(USER_AVATAR_PROPERTY_NAME, List.of(avatarHelper.getAvatarByUserId(user.get("id").get(0), authentication))));
+        }
 
         return users;
     }

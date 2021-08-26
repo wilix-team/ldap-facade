@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.SingleRootFileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import dev.wilix.ldap.facade.api.Authentication;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.AfterAll;
@@ -33,12 +34,12 @@ public class WiremockEspoTest {
     public static final String DEFAULT_SERVICE_TOKEN = "token";
 
     private final String USERS_INFO_BODY_FILE_PATH = "users_info.json";
+    private final String USER_AVATAR_FILE_PATH = "user_avatar.png";
     private final String GROUPS_INFO_BODY_FILE_PATH = "groups_info.json";
     private final String USER_INFO_SUCCESS_BODY_FILE_PATH = "user_info.json";
     private final String BROKEN_JSON_BODY_FILE_PATH = "broken_format.json";
 
     private final String USERS_URI = "/api/v1/User";
-    private final String USERS_SEARCH_INFO_URI = "/api/v1/User?select=emailAddress%2CteamsIds";
     private final String GROUPS_URI = "/api/v1/Team";
     private final String USERS_AUTH_URI = "/api/v1/App/user";
     private final String WRONG_URI = "/api/v1/wrong";
@@ -135,46 +136,52 @@ public class WiremockEspoTest {
     @Test
     public void positiveReceiveUsersInfoWithUserAuth() {
         stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingUserAvatarWithUserAuth();
         List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(buildUserAuthentication());
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "gn", "sn", "active", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(1, USERS_SEARCH_INFO_URI);
+        checkRequest(1, USERS_URI);
     }
 
     @Test
     public void positiveReceiveUsersInfoWithServiceAuth() {
         stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingUserAvatarWithServiceAuth();
         List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(buildServiceAuthentication());
         String[] attributes = {"id", "entryuuid", "uid", "cn", "telephoneNumber", "mail", "gn", "sn", "active", "memberof", "vcsName"};
         usersInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(1, USERS_SEARCH_INFO_URI);
+        checkRequest(1, USERS_URI);
     }
 
     @Test
     public void positiveReceiveGroupsInfoWithUserAuth() {
         stubMappingWithUserAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_OK);
         stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingUserAvatarWithUserAuth();
         List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(buildUserAuthentication());
         String[] attributes = {"id", "primarygrouptoken", "gidnumber", "entryuuid", "uid", "cn"};
         groupsInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(2, GROUPS_URI);
+        checkRequest(1, USERS_URI);
+        checkRequest(1, GROUPS_URI);
     }
 
     @Test
     public void positiveReceiveGroupsInfoWithServiceAuth() {
         stubMappingWithServiceAuth(GROUPS_URI, GROUPS_INFO_BODY_FILE_PATH, SC_OK);
         stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_OK);
+        stubMappingUserAvatarWithServiceAuth();
         List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(buildServiceAuthentication());
         String[] attributes = {"id", "primarygrouptoken", "gidnumber", "entryuuid", "uid", "cn"};
         groupsInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(2, GROUPS_URI);
+        checkRequest(1, USERS_URI);
+        checkRequest(1, GROUPS_URI);
     }
 
     @Test
     public void negativeReceiveUsersInfoBecauseWrongUserAuth() {
         stubMappingWithUserAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllUsers(buildUserAuthentication()));
-        checkRequest(1, USERS_SEARCH_INFO_URI);
+        checkRequest(1, USERS_URI);
     }
 
     @Test
@@ -182,7 +189,7 @@ public class WiremockEspoTest {
         stubMappingWithServiceAuth(USERS_URI, USERS_INFO_BODY_FILE_PATH, SC_FORBIDDEN);
         assertThrows(RuntimeException.class, () -> espoDataStorage.getAllUsers(buildServiceAuthentication()));
         wireMockServer.verify(1, allRequests());
-        checkRequest(1, USERS_SEARCH_INFO_URI);
+        checkRequest(1, USERS_URI);
     }
 
     @Test
@@ -231,10 +238,38 @@ public class WiremockEspoTest {
                 .build());
     }
 
+    // TODO Универсализировать!
+    private void stubMappingUserAvatarWithUserAuth() {
+        ResponseDefinitionBuilder responseDefBuilder = aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "image/png")
+                .withBodyFile(USER_AVATAR_FILE_PATH);
+
+        wireMockServer.addStubMapping(WireMock.get(urlPathEqualTo("/"))
+                .withQueryParam("entryPoint", equalTo("avatar"))
+                .withBasicAuth(DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD)
+                .willReturn(responseDefBuilder)
+                .build());
+    }
+
+    // TODO Универсализировать!
+    private void stubMappingUserAvatarWithServiceAuth() {
+        ResponseDefinitionBuilder responseDefBuilder = aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "image/png")
+                .withBodyFile(USER_AVATAR_FILE_PATH);
+
+        wireMockServer.addStubMapping(WireMock.get(urlPathEqualTo("/"))
+                .withQueryParam("entryPoint", equalTo("avatar"))
+                .withHeader("X-Api-Key", equalTo(DEFAULT_SERVICE_TOKEN))
+                .willReturn(responseDefBuilder)
+                .build());
+    }
+
     private void checkRequest(int numberOfRequest, String uri) {
-        wireMockServer.verify(numberOfRequest, allRequests());
-        wireMockServer.verify(getRequestedFor(urlEqualTo(uri))
-                .withHeader("Content-Type", equalTo("application/json; charset=UTF-8")));
+        RequestPatternBuilder requestPattern = getRequestedFor(urlPathEqualTo(uri))
+                .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"));
+        wireMockServer.verify(numberOfRequest, requestPattern);
     }
 
     private Authentication buildUserAuthentication() {
