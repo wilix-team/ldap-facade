@@ -60,11 +60,10 @@ public class RequestHelper {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        checkAccess(request);
+        checkAccess(request, response);
 
         return response.body();
     }
-
 
     private JsonNode sendCrmRequest(HttpRequest request) {
         HttpResponse<String> response;
@@ -74,7 +73,7 @@ public class RequestHelper {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        checkAccess(request);
+        checkAccess(request, response);
 
         try {
             return objectMapper.readTree(response.body());
@@ -84,13 +83,7 @@ public class RequestHelper {
         }
     }
 
-    private void checkAccess(HttpRequest request) {
-        HttpResponse<Void> response;
-        try {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-        } catch (IOException | InterruptedException ex) {
-            throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
-        }
+    private <T> void checkAccess(HttpRequest request, HttpResponse<T> response) {
 
         LOG.debug("Receive response from CRM: {}", response.body());
 
