@@ -43,29 +43,28 @@ public class RequestHelper {
         this.objectMapper = objectMapper;
     }
 
-    JsonNode sendCrmRequest(String url, Authentication authentication) {
-        return sendCrmRequest(prepareCrmRequest(url, authentication));
+    JsonNode sendCrmRequestForJson(String url, Authentication authentication) {
+        return sendCrmRequestForJson(prepareCrmRequest(url, authentication));
     }
 
-    byte[] sendCrmRequestOfImage(String url, Authentication authentication) {
-        return sendCrmRequestOfImage(prepareCrmRequest(url, authentication));
+    byte[] sendCrmRequestForBytes(String url, Authentication authentication) {
+        return sendCrmRequestForBytes(prepareCrmRequest(url, authentication));
     }
 
-    private byte[] sendCrmRequestOfImage(HttpRequest request) {
+    private byte[] sendCrmRequestForBytes(HttpRequest request) {
         HttpResponse<byte[]> response;
-
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException | InterruptedException ex) {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        checkAccess(request, response);
+        correctResponseCheck(request, response);
 
         return response.body();
     }
 
-    private JsonNode sendCrmRequest(HttpRequest request) {
+    private JsonNode sendCrmRequestForJson(HttpRequest request) {
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -73,7 +72,7 @@ public class RequestHelper {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
 
-        checkAccess(request, response);
+        correctResponseCheck(request, response);
 
         try {
             return objectMapper.readTree(response.body());
@@ -83,7 +82,7 @@ public class RequestHelper {
         }
     }
 
-    private <T> void checkAccess(HttpRequest request, HttpResponse<T> response) {
+    private <T> void correctResponseCheck(HttpRequest request, HttpResponse<T> response) {
 
         LOG.debug("Receive response from CRM: {}", response.body());
 

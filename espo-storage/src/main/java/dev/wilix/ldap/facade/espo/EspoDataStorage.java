@@ -21,11 +21,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
-import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -55,7 +53,6 @@ public class EspoDataStorage implements DataStorage {
     private final String authenticateUserUri;
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
-
 
     public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl, boolean loadUsersAvatars) {
         this.requestHelper = requestHelper;
@@ -147,12 +144,12 @@ public class EspoDataStorage implements DataStorage {
     }
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(authenticateUserUri, authentication);
         return entityParser.parseUserInfo(response.get("user"));
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(searchAllGroupsUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(searchAllGroupsUri, authentication);
         List<Map<String, List<String>>> groups = StreamSupport.stream(response.get("list").spliterator(), false)
                 .map(entityParser::parseGroupInfo)
                 .collect(Collectors.toList());
@@ -173,7 +170,7 @@ public class EspoDataStorage implements DataStorage {
     }
 
     private List<Map<String, List<String>>> performUsersSearch(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(searchAllUsersUri, authentication);
 
         List<Map<String, List<String>>> users = StreamSupport.stream(response.get("list").spliterator(), false)
                 .map(entityParser::parseUserInfo)

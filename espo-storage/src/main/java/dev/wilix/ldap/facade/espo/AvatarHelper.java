@@ -34,7 +34,8 @@ public class AvatarHelper {
             LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
         }
-        return convertByteArrayToString(requestHelper.sendCrmRequestOfImage(avatarUri, authentication));
+        // FIXME Вероятно придется проверять тип возвращаемой картинки и её переводить в jpeg формат.
+        return convertByteArrayToString(requestHelper.sendCrmRequestForBytes(avatarUri, authentication));
     }
 
     public static String convertByteArrayToString(byte[] input) {
