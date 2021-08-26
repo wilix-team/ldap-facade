@@ -60,11 +60,11 @@ public class EspoDataStorage implements DataStorage {
         this.entityParser = entityParser;
 
         users = CacheBuilder.newBuilder()
-                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
+                .expireAfterWrite(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         groups = CacheBuilder.newBuilder()
-                .expireAfterAccess(cacheExpirationMinutes, TimeUnit.MINUTES)
+                .expireAfterWrite(cacheExpirationMinutes, TimeUnit.MINUTES)
                 .build();
 
         try {
