@@ -27,10 +27,13 @@ import java.util.Map;
 @Validated // TODO Добавить зависимость и навесить валидацию для полей.
 @ConfigurationProperties(prefix = "storage.espo")
 public class EspoDataStorageConfigurationProperties {
+
     private int cacheExpirationMinutes = 2;
 
     @NotEmpty
     private String baseUrl;
+
+    private boolean loadAvatars;
 
     private Map<String, List<String>> additionalUserAttributes = Collections.emptyMap();
 
@@ -48,6 +51,14 @@ public class EspoDataStorageConfigurationProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public boolean isLoadAvatars() {
+        return loadAvatars;
+    }
+
+    public void setLoadAvatars(boolean loadAvatars) {
+        this.loadAvatars = loadAvatars;
     }
 
     public Map<String, List<String>> getAdditionalUserAttributes() {

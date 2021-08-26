@@ -21,11 +21,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
-import dev.wilix.ldap.facade.espo.config.properties.EspoDataStorageConfigurationProperties;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -42,8 +40,12 @@ import java.util.stream.StreamSupport;
 public class EspoDataStorage implements DataStorage {
     // TODO Нужно добавить проверку у пользователей на флаг isActive
     private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
+    private static final String USER_AVATAR_PROPERTY_NAME = "jpegPhoto";
+
+    private boolean loadUsersAvatars;
 
     private final RequestHelper requestHelper;
+    private final AvatarHelper avatarHelper;
     private final EntityParser entityParser;
     private final Cache<Authentication, List<Map<String, List<String>>>> users;
     private final Cache<Authentication, List<Map<String, List<String>>>> groups;
@@ -52,9 +54,12 @@ public class EspoDataStorage implements DataStorage {
     private final String searchAllUsersUri;
     private final String searchAllGroupsUri;
 
-    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl) {
+    public EspoDataStorage(RequestHelper requestHelper, EntityParser entityParser, int cacheExpirationMinutes, String baseUrl, boolean loadUsersAvatars) {
         this.requestHelper = requestHelper;
+        this.avatarHelper = new AvatarHelper(baseUrl, requestHelper);
         this.entityParser = entityParser;
+
+        this.loadUsersAvatars = loadUsersAvatars;
 
         users = CacheBuilder.newBuilder()
                 .expireAfterWrite(cacheExpirationMinutes, TimeUnit.MINUTES)
@@ -69,6 +74,7 @@ public class EspoDataStorage implements DataStorage {
             searchAllUsersUri = new URIBuilder(baseUrl).setPath("/api/v1/User")
                     .addParameter("select", "emailAddress,teamsIds").build().toString();
             searchAllGroupsUri = new URIBuilder(baseUrl).setPath("/api/v1/Team").build().toString();
+
         } catch (URISyntaxException e) {
             LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
@@ -138,12 +144,12 @@ public class EspoDataStorage implements DataStorage {
     }
 
     private Map<String, List<String>> checkAuthentication(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(authenticateUserUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(authenticateUserUri, authentication);
         return entityParser.parseUserInfo(response.get("user"));
     }
 
     private List<Map<String, List<String>>> performGroupsSearch(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(searchAllGroupsUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(searchAllGroupsUri, authentication);
         List<Map<String, List<String>>> groups = StreamSupport.stream(response.get("list").spliterator(), false)
                 .map(entityParser::parseGroupInfo)
                 .collect(Collectors.toList());
@@ -164,11 +170,16 @@ public class EspoDataStorage implements DataStorage {
     }
 
     private List<Map<String, List<String>>> performUsersSearch(Authentication authentication) {
-        JsonNode response = requestHelper.sendCrmRequest(searchAllUsersUri, authentication);
+        JsonNode response = requestHelper.sendCrmRequestForJson(searchAllUsersUri, authentication);
 
-        return StreamSupport.stream(response.get("list").spliterator(), false)
+        List<Map<String, List<String>>> users = StreamSupport.stream(response.get("list").spliterator(), false)
                 .map(entityParser::parseUserInfo)
                 .collect(Collectors.toList());
-    }
 
+        if (loadUsersAvatars) {
+            users.forEach(user -> user.put(USER_AVATAR_PROPERTY_NAME, List.of(avatarHelper.getAvatarByUserId(user.get("id").get(0), authentication))));
+        }
+
+        return users;
+    }
 }

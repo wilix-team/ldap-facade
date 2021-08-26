@@ -134,8 +134,13 @@ public class SearchOperationProcessor {
             final List<String> attributeValues = info
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
-        }
 
+            String userAvatarAttrubuteName = "jpegPhoto";
+            if (info.containsKey(userAvatarAttrubuteName)) {
+                byte[] avatarByteArray = Base64.getDecoder().decode(info.get(userAvatarAttrubuteName).get(0));
+                entry.setAttribute(userAvatarAttrubuteName, avatarByteArray);
+            }
+        }
         return entry;
     }
 }

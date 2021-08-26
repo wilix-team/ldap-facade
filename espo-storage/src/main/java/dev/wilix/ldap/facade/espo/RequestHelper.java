@@ -43,17 +43,46 @@ public class RequestHelper {
         this.objectMapper = objectMapper;
     }
 
-    JsonNode sendCrmRequest(String url, Authentication authentication) {
-        return sendCrmRequest(prepareCrmRequest(url, authentication));
+    JsonNode sendCrmRequestForJson(String url, Authentication authentication) {
+        return sendCrmRequestForJson(prepareCrmRequest(url, authentication));
     }
 
-    private JsonNode sendCrmRequest(HttpRequest request) {
+    byte[] sendCrmRequestForBytes(String url, Authentication authentication) {
+        return sendCrmRequestForBytes(prepareCrmRequest(url, authentication));
+    }
+
+    private byte[] sendCrmRequestForBytes(HttpRequest request) {
+        HttpResponse<byte[]> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException | InterruptedException ex) {
+            throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
+        }
+
+        correctResponseCheck(request, response);
+
+        return response.body();
+    }
+
+    private JsonNode sendCrmRequestForJson(HttpRequest request) {
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException ex) {
             throw new IllegalStateException("Get errors when trying to communicate with CRM!", ex);
         }
+
+        correctResponseCheck(request, response);
+
+        try {
+            return objectMapper.readTree(response.body());
+        } catch (Exception e) {
+            LOG.warn("Cant save {} info {}", request, response.body());
+            throw new IllegalStateException("Can't properly parse CRM response.", e);
+        }
+    }
+
+    private <T> void correctResponseCheck(HttpRequest request, HttpResponse<T> response) {
 
         LOG.debug("Receive response from CRM: {}", response.body());
 
@@ -65,13 +94,6 @@ public class RequestHelper {
         if (response.statusCode() != 200) {
             LOG.warn("For request {} receive bad response from CRM {}", request, response);
             throw new IllegalStateException("Get bad request from CRM!");
-        }
-
-        try {
-            return objectMapper.readTree(response.body());
-        } catch (Exception e) {
-            LOG.warn("Cant save {} info {}", request, response.body());
-            throw new IllegalStateException("Can't properly parse CRM response.", e);
         }
     }
 
