@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.3.5.RELEASE'
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+compileJava.options.encoding = "UTF-8"
+compileTestJava.options.encoding = "UTF-8"
+javadoc.options.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.springframework.boot:spring-boot-dependencies:2.3.5.RELEASE')
+
+    testImplementation project(":server")
+
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.4'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

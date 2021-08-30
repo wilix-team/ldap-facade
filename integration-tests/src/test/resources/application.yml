@@ -1,0 +1,21 @@
+listener:
+  port: 10636
+  sslEnabled: false
+
+ldap:
+  baseDn: 'dc=company,dc=com'
+  servicesBaseDn: 'ou=services,dc=company,dc=com'
+  usersBaseDn: 'ou=people,dc=company,dc=com'
+  groupsBaseDn: 'ou=groups,dc=company,dc=com'
+  userClassName: 'organizationalPerson' # TODO Посмотреть, какой сюда подставить.
+  groupClassName: 'groupOfNames'
+  mainNameAttribute: 'uid'
+  searchCacheExpirationMinutes: 0 # Для тестирования отключаем кеширование
+
+storage:
+  type: 'espo'
+  espo:
+    cacheExpirationMinutes: 0 # Для тестирования отключаем кеширование
+    baseUrl: https://crm.company.org
+    additionalUserAttributes:
+      'company': [company]
