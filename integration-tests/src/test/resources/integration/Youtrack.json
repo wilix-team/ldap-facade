@@ -1,0 +1,8 @@
+{
+    "attributes": [
+        "uid",
+        "cn",
+        "mail",
+        "memberof"
+    ]
+}
