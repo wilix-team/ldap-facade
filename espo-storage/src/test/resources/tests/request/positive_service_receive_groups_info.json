@@ -1,0 +1,24 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/User",
+      "responseFilePath": "users_info.json",
+      "responseStatusCode": 200
+    },
+    {
+      "uri": "/api/v1/Team",
+      "responseFilePath": "groups_info.json",
+      "responseStatusCode": 200
+    }
+  ],
+  "serviceAccount": true,
+  "target": "groups",
+  "attributes": [
+    "id",
+    "primarygrouptoken",
+    "gidnumber",
+    "entryuuid",
+    "uid",
+    "cn"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/App/user",
+      "responseFilePath": "user_info.json",
+      "responseStatusCode": 403
+    }
+  ],
+  "serviceAccount": false,
+  "authSuccess": false,
+  "authentication": {
+    "login": "wrongUsername",
+    "password": "wrongPassword"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/wrong",
+      "responseFilePath": "user_info.json",
+      "responseStatusCode": 200
+    }
+  ],
+  "serviceAccount": false,
+  "authSuccess": false
+}

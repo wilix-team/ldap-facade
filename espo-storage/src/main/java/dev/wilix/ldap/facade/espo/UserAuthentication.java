@@ -20,10 +20,19 @@ import dev.wilix.ldap.facade.api.Authentication;
 
 import java.util.Objects;
 
-class UserAuthentication implements Authentication {
+public class UserAuthentication implements Authentication {
     private String userName;
     private String password;
     private boolean isSuccess;
+
+    public UserAuthentication() {
+    }
+
+    public UserAuthentication(String userName, String password, boolean isSuccess) {
+        this.userName = userName;
+        this.password = password;
+        this.isSuccess = isSuccess;
+    }
 
     public String getUserName() {
         return userName;

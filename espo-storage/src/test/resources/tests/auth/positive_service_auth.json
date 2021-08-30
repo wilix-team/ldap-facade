@@ -1,0 +1,11 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/App/user",
+      "responseFilePath": "user_info.json",
+      "responseStatusCode": 200
+    }
+  ],
+  "serviceAccount": true,
+  "authSuccess": true
+}

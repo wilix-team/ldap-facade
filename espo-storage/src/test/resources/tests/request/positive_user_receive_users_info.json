@@ -1,0 +1,24 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/User",
+      "responseFilePath": "users_info.json",
+      "responseStatusCode": 200
+    }
+  ],
+  "serviceAccount": false,
+  "target": "users",
+  "attributes": [
+    "id",
+    "entryuuid",
+    "uid",
+    "cn",
+    "telephoneNumber",
+    "mail",
+    "gn",
+    "sn",
+    "active",
+    "memberof",
+    "vcsName"
+  ]
+}
