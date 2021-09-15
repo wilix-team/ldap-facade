@@ -4,10 +4,19 @@
       "uri": "/api/v1/User",
       "responseFilePath": "users_info.json",
       "responseStatusCode": 200
+    },
+    {
+      "uri": "/",
+      "params": {
+        "entryPoint": "avatar"
+      },
+      "responseFilePath": "avatar.png",
+      "responseContentType": "image/png",
+      "responseStatusCode": 200
     }
   ],
-  "serviceAccount": true,
-  "target": "users",
+  "accountType": "SERVICE",
+  "target": "USERS",
   "attributes": [
     "id",
     "entryuuid",

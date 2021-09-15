@@ -6,6 +6,6 @@
       "responseStatusCode": 403
     }
   ],
-  "serviceAccount": false,
-  "target": "groups"
+  "accountType": "USER",
+  "target": "GROUPS"
 }

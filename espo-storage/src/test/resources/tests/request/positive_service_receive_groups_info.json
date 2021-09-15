@@ -9,10 +9,19 @@
       "uri": "/api/v1/Team",
       "responseFilePath": "groups_info.json",
       "responseStatusCode": 200
+    },
+    {
+      "uri": "/",
+      "params": {
+        "entryPoint": "avatar"
+      },
+      "responseFilePath": "avatar.png",
+      "responseContentType": "image/png",
+      "responseStatusCode": 200
     }
   ],
-  "serviceAccount": true,
-  "target": "groups",
+  "accountType": "SERVICE",
+  "target": "GROUPS",
   "attributes": [
     "id",
     "primarygrouptoken",

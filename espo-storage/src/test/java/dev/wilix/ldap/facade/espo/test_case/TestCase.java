@@ -1,6 +1,8 @@
 package dev.wilix.ldap.facade.espo.test_case;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Родитель для всех тестовых кейсов.
@@ -9,7 +11,15 @@ import java.util.List;
 public abstract class TestCase {
 
     protected List<TestCaseRequest> requests;
-    protected boolean serviceAccount;
+    protected AccountType accountType;
+
+    public AccountType getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(AccountType accountType) {
+        this.accountType = accountType;
+    }
 
     public List<TestCaseRequest> getRequests() {
         return requests;
@@ -19,21 +29,15 @@ public abstract class TestCase {
         this.requests = requests;
     }
 
-    public boolean isServiceAccount() {
-        return serviceAccount;
-    }
-
-    public void setServiceAccount(boolean serviceAccount) {
-        this.serviceAccount = serviceAccount;
-    }
-
     /**
      * Информация о запросе для заглушки в кейсе.
      */
     public static class TestCaseRequest {
 
         private String uri;
+        private Map<String, String> params = new HashMap<>();
         private String responseFilePath;
+        private String responseContentType = "application/json";
         private int responseStatusCode;
 
         public String getUri() {
@@ -44,12 +48,28 @@ public abstract class TestCase {
             this.uri = uri;
         }
 
+        public Map<String, String> getParams() {
+            return params;
+        }
+
+        public void setParams(Map<String, String> params) {
+            this.params = params;
+        }
+
         public String getResponseFilePath() {
             return responseFilePath;
         }
 
         public void setResponseFilePath(String responseFilePath) {
             this.responseFilePath = responseFilePath;
+        }
+
+        public String getResponseContentType() {
+            return responseContentType;
+        }
+
+        public void setResponseContentType(String responseContentType) {
+            this.responseContentType = responseContentType;
         }
 
         public int getResponseStatusCode() {
@@ -59,6 +79,13 @@ public abstract class TestCase {
         public void setResponseStatusCode(int responseStatusCode) {
             this.responseStatusCode = responseStatusCode;
         }
+
+    }
+
+    public enum AccountType {
+
+        USER,
+        SERVICE
 
     }
 

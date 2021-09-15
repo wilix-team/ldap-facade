@@ -6,6 +6,6 @@
       "responseStatusCode": 200
     }
   ],
-  "serviceAccount": false,
+  "accountType": "USER",
   "authSuccess": false
 }

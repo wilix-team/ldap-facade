@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * Результат аутентификации сервисного аккаунта в CRM.
  */
-public class ServiceAuthentication implements Authentication {
+class ServiceAuthentication implements Authentication {
     private String serviceName;
     private String token;
     private boolean isSuccess;

@@ -6,7 +6,7 @@
       "responseStatusCode": 403
     }
   ],
-  "serviceAccount": false,
+  "accountType": "USER",
   "authSuccess": false,
   "authentication": {
     "login": "wrongUsername",

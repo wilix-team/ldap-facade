@@ -5,14 +5,14 @@ package dev.wilix.ldap.facade.espo.test_case;
  */
 public class RequestTestCase extends TestCase {
 
-    private String target;
+    private Target target;
     private String[] attributes;
 
-    public String getTarget() {
+    public Target getTarget() {
         return target;
     }
 
-    public void setTarget(String target) {
+    public void setTarget(Target target) {
         this.target = target;
     }
 
@@ -22,6 +22,13 @@ public class RequestTestCase extends TestCase {
 
     public void setAttributes(String[] attributes) {
         this.attributes = attributes;
+    }
+
+    public enum Target {
+
+        USERS,
+        GROUPS
+
     }
 
 }
