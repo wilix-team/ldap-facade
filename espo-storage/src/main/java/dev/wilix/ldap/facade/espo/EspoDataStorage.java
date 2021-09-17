@@ -84,19 +84,14 @@ public class EspoDataStorage implements DataStorage {
     @Override
     public Authentication authenticateUser(String userName, String password) {
         try {
-            UserAuthentication auth = new UserAuthentication();
-            auth.setUserName(userName);
-            auth.setPassword(password);
-
             // Если вернется без ошибки - все хорошо.
-            Map<String, List<String>> userInfo = checkAuthentication(auth);
+            Map<String, List<String>> userInfo = checkAuthentication(new UserAuthentication(userName, password));
 
             if (userInfo.isEmpty()) {
                 throw new IllegalStateException("Unexpected result from user authentication");
             }
 
-            auth.setSuccess(true);
-            return auth;
+            return new UserAuthentication(userName, password, true);
         } catch (Exception ex) {
             LOG.debug("Wrong user credentials: {}:{}", userName, password);
             return Authentication.NEGATIVE;
@@ -106,19 +101,14 @@ public class EspoDataStorage implements DataStorage {
     @Override
     public Authentication authenticateService(String serviceName, String token) {
         try {
-            ServiceAuthentication auth = new ServiceAuthentication();
-            auth.setServiceName(serviceName);
-            auth.setToken(token);
-
             // Если вернется без ошибки - все хорошо.
-            Map<String, List<String>> userInfo = checkAuthentication(auth);
+            Map<String, List<String>> userInfo = checkAuthentication(new ServiceAuthentication(serviceName, token));
 
             if (userInfo.isEmpty()) {
                 throw new IllegalStateException("Unexpected result from service authentication");
             }
 
-            auth.setSuccess(true);
-            return auth;
+            return new ServiceAuthentication(serviceName, token, true);
         } catch (Exception ex) {
             LOG.debug("Wrong service credentials: {}:{}", serviceName, token);
             return Authentication.NEGATIVE;

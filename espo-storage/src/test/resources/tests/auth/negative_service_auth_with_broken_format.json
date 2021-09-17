@@ -1,0 +1,15 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/App/user",
+      "responseFilePath": "broken_format.json",
+      "responseStatusCode": 200
+    }
+  ],
+  "accountType": "USER",
+  "authSuccess": false,
+  "authentication": {
+    "login": "wrongServiceName",
+    "password": "wrongServiceToken"
+  }
+}

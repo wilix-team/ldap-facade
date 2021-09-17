@@ -1,0 +1,11 @@
+{
+  "requests": [
+    {
+      "uri": "/api/v1/User",
+      "responseFilePath": "users_info.json",
+      "responseStatusCode": 403
+    }
+  ],
+  "accountType": "SERVICE",
+  "target": "USERS"
+}

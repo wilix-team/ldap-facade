@@ -25,29 +25,25 @@ class UserAuthentication implements Authentication {
     private String password;
     private boolean isSuccess;
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
+    public UserAuthentication(String userName, String password) {
         this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
         this.password = password;
     }
 
-    @Override
-    public boolean isSuccess() {
-        return isSuccess;
+    public UserAuthentication(String userName, String password, boolean isSuccess) {
+        this.userName = userName;
+        this.password = password;
+        this.isSuccess = isSuccess;
     }
 
-    public void setSuccess(boolean success) {
-        isSuccess = success;
+    String getUserName() {
+        return userName;
+    }
+    String getPassword() {
+        return password;
+    }
+    @Override public boolean isSuccess() {
+        return isSuccess;
     }
 
     @Override
