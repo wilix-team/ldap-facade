@@ -37,16 +37,12 @@ public abstract class TestCaseProvider implements ArgumentsProvider {
                 ));
     }
 
-    private Object readTestCase(Path path) {
-        TestCase testCase = null;
-
+    private TestCase readTestCase(Path path) {
         try {
-            testCase = MAPPER.readValue(path.toFile(), testCaseClass);
+            return MAPPER.readValue(path.toFile(), testCaseClass);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("Can't read or parse file:" + path, e);
         }
-
-        return testCase;
     }
 
 }

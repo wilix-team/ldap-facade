@@ -25,10 +25,8 @@ public class RequestTestCase extends TestCase {
     }
 
     public enum Target {
-
         USERS,
         GROUPS
-
     }
 
 }

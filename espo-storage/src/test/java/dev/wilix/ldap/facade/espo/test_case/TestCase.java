@@ -83,10 +83,8 @@ public abstract class TestCase {
     }
 
     public enum AccountType {
-
         USER,
         SERVICE
-
     }
 
 }

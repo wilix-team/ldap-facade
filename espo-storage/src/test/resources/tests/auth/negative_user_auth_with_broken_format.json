@@ -7,5 +7,9 @@
     }
   ],
   "accountType": "USER",
-  "authSuccess": false
+  "authSuccess": false,
+  "authentication": {
+    "login": "wrongUsername",
+    "password": "wrongPassword"
+  }
 }

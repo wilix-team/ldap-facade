@@ -25,11 +25,12 @@ import java.util.Objects;
  * Результат аутентификации сервисного аккаунта в CRM.
  */
 class ServiceAuthentication implements Authentication {
-    private String serviceName;
-    private String token;
-    private boolean isSuccess;
+    private final String serviceName;
+    private final String token;
+    private final boolean isSuccess;
 
-    public ServiceAuthentication() {
+    public ServiceAuthentication(String serviceName, String token) {
+        this(serviceName, token, false);
     }
 
     public ServiceAuthentication(String serviceName, String token, boolean isSuccess) {
@@ -38,30 +39,9 @@ class ServiceAuthentication implements Authentication {
         this.isSuccess = isSuccess;
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    @Override
-    public boolean isSuccess() {
-        return isSuccess;
-    }
-
-    public void setSuccess(boolean success) {
-        isSuccess = success;
-    }
+    String getServiceName() { return serviceName; }
+    String getToken() { return token; }
+    @Override public boolean isSuccess() { return isSuccess; }
 
     @Override
     public boolean equals(Object o) {

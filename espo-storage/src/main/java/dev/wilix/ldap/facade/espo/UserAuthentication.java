@@ -25,7 +25,9 @@ class UserAuthentication implements Authentication {
     private String password;
     private boolean isSuccess;
 
-    public UserAuthentication() {
+    public UserAuthentication(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
     }
 
     public UserAuthentication(String userName, String password, boolean isSuccess) {
@@ -34,29 +36,14 @@ class UserAuthentication implements Authentication {
         this.isSuccess = isSuccess;
     }
 
-    public String getUserName() {
+    String getUserName() {
         return userName;
     }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
+    String getPassword() {
         return password;
     }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Override
-    public boolean isSuccess() {
+    @Override public boolean isSuccess() {
         return isSuccess;
-    }
-
-    public void setSuccess(boolean success) {
-        isSuccess = success;
     }
 
     @Override

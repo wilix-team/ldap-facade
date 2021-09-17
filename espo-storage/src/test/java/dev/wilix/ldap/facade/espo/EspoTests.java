@@ -6,14 +6,12 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.SingleRootFileSource;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
+import com.github.tomakehurst.wiremock.http.HttpStatus;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import dev.wilix.ldap.facade.api.Authentication;
-import dev.wilix.ldap.facade.espo.test_case.AuthTestCase;
-import dev.wilix.ldap.facade.espo.test_case.AuthTestCaseProvider;
-import dev.wilix.ldap.facade.espo.test_case.RequestTestCase;
+import dev.wilix.ldap.facade.espo.test_case.*;
 import dev.wilix.ldap.facade.espo.test_case.RequestTestCase.Target;
-import dev.wilix.ldap.facade.espo.test_case.RequestTestCaseProvider;
 import dev.wilix.ldap.facade.espo.test_case.TestCase.TestCaseRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,7 +46,8 @@ public class EspoTests {
 
     @BeforeAll
     public static void beforeAll() {
-        wireMockServer = new WireMockServer(8080, new SingleRootFileSource(EspoTests.class.getClassLoader().getResource("wiremock").getPath()), true);
+        SingleRootFileSource woremockFileSource = new SingleRootFileSource(EspoTests.class.getClassLoader().getResource("wiremock").getPath());
+        wireMockServer = new WireMockServer(8080, woremockFileSource, true);
         wireMockServer.start();
     }
 
@@ -65,37 +64,36 @@ public class EspoTests {
     @ParameterizedTest(name = "{index} - {0}")
     @ArgumentsSource(AuthTestCaseProvider.class)
     public void authTests(String testCaseName, AuthTestCase testCase) {
-        Authentication authentication = prepareAuthentication(testCase);
+        // Prepare auth mock
+        stubRequest(testCase.getRequests().get(0), prepareTestCaseExpectedAuthentication(testCase));
 
-        for (TestCaseRequest testCaseRequest : testCase.getRequests()) {
-            stubRequest(testCaseRequest, authentication);
-        }
+        // Do auth
+        Authentication authentication = authenticate(testCase.getAccountType(), testCase.getAuthentication().getLogin(), testCase.getAuthentication().getPassword());
 
-        authentication = authenticate(authentication);
-
+        // Check auth
         assertEquals(testCase.isAuthSuccess(), authentication.isSuccess());
         checkRequest(1, USERS_AUTH_URI);
     }
 
-    private Authentication prepareAuthentication(AuthTestCase testCase) {
-        if (testCase.getAuthentication() != null) {
-            return testCase.getAccountType() == SERVICE ?
-                    new ServiceAuthentication(testCase.getAuthentication().getLogin(), testCase.getAuthentication().getPassword(), false) :
-                    new UserAuthentication(testCase.getAuthentication().getLogin(), testCase.getAuthentication().getPassword(), false);
-        } else {
-            return testCase.getAccountType() == SERVICE ? SERVICE_AUTHENTICATION : USER_AUTHENTICATION;
+    private Authentication prepareTestCaseExpectedAuthentication(AuthTestCase testCase) {
+        switch (testCase.getAccountType()) {
+            case USER:
+                return new UserAuthentication(testCase.getAuthentication().getLogin(), testCase.getAuthentication().getPassword(), false);
+            case SERVICE:
+                return new ServiceAuthentication(testCase.getAuthentication().getLogin(), testCase.getAuthentication().getPassword(), false);
+            default:
+                throw new IllegalStateException("Unexpected authentication type value: " + testCase.getAccountType());
         }
     }
 
-    private Authentication authenticate(Authentication authentication) {
-        if (authentication instanceof UserAuthentication) {
-            UserAuthentication userAuthentication = (UserAuthentication) authentication;
-            return espoDataStorage.authenticateUser(userAuthentication.getUserName(), userAuthentication.getPassword());
-        } else if (authentication instanceof ServiceAuthentication) {
-            ServiceAuthentication serviceAuthentication = (ServiceAuthentication) authentication;
-            return espoDataStorage.authenticateService(serviceAuthentication.getServiceName(), serviceAuthentication.getToken());
-        } else {
-            throw new UnsupportedOperationException("Unknown authentication type");
+    private Authentication authenticate(TestCase.AccountType accountType, String login, String password) {
+        switch (accountType) {
+            case USER:
+                return espoDataStorage.authenticateUser(login, password);
+            case SERVICE:
+                return espoDataStorage.authenticateService(login, password);
+            default:
+                throw new IllegalStateException("Unexpected authentication type value: " + accountType);
         }
     }
 
@@ -108,45 +106,36 @@ public class EspoTests {
             stubRequest(testCaseRequest, authentication);
         }
 
-        if (isPositive(testCase)) {
-            receiveTarget(testCase.getTarget(), authentication, testCase.getAttributes());
+        boolean isPositiveTestCase = testCase.getRequests().stream()
+                .map(TestCaseRequest::getResponseStatusCode)
+                .allMatch(HttpStatus::isSuccess);
+
+        if (isPositiveTestCase) {
+            getAndCheckEntities(testCase.getTarget(), authentication, testCase.getAttributes());
         } else {
-            assertThrows(RuntimeException.class, () -> receiveTarget(testCase.getTarget(), authentication));
+            assertThrows(RuntimeException.class, () -> getAndCheckEntities(testCase.getTarget(), authentication));
         }
     }
 
-    private boolean isPositive(RequestTestCase testCase) {
-        return testCase.getRequests().stream().map(TestCaseRequest::getResponseStatusCode).allMatch(status -> status == 200);
-    }
-
-    private void receiveTarget(Target target, Authentication authentication, String... attributes) {
+    private void getAndCheckEntities(Target target, Authentication authentication, String... attributes) {
         switch (target) {
             case USERS:
-                receiveUsers(authentication, attributes);
+                List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(authentication);
+                usersInfo.forEach(e -> checkAttributes(e, attributes));
+                checkRequest(1, USERS_URI);
                 break;
             case GROUPS:
-                receiveGroups(authentication, attributes);
+                List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(authentication);
+                groupsInfo.forEach(e -> checkAttributes(e, attributes));
+                checkRequest(1, USERS_URI);
+                checkRequest(1, GROUPS_URI);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown receive target");
         }
-
     }
 
-    private void receiveUsers(Authentication authentication, String[] attributes) {
-        List<Map<String, List<String>>> usersInfo = espoDataStorage.getAllUsers(authentication);
-        usersInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(1, USERS_URI);
-    }
-
-    private void receiveGroups(Authentication authentication, String[] attributes) {
-        List<Map<String, List<String>>> groupsInfo = espoDataStorage.getAllGroups(authentication);
-        groupsInfo.forEach(e -> checkAttributes(e, attributes));
-        checkRequest(1, USERS_URI);
-        checkRequest(1, GROUPS_URI);
-    }
-
-    private void stubRequest(TestCaseRequest testCaseRequest, Authentication authentication) {
+    private void stubRequest(TestCaseRequest testCaseRequest, Authentication expectedAuthentication) {
         ResponseDefinitionBuilder responseDefBuilder = aResponse()
                 .withStatus(testCaseRequest.getResponseStatusCode())
                 .withHeader(ContentTypeHeader.KEY, testCaseRequest.getResponseContentType())
@@ -157,15 +146,15 @@ public class EspoTests {
 
         testCaseRequest.getParams().forEach((k, v) -> mappingBuilder.withQueryParam(k, equalTo(v)));
 
-        wireMockServer.addStubMapping(buildStubWithAuthCredentials(mappingBuilder, authentication));
+        wireMockServer.addStubMapping(buildStubWithAuthCredentials(mappingBuilder, expectedAuthentication));
     }
 
-    private StubMapping buildStubWithAuthCredentials(MappingBuilder mappingBuilder, Authentication authentication) {
-        if (authentication instanceof UserAuthentication) {
-            UserAuthentication userAuthentication = (UserAuthentication) authentication;
+    private StubMapping buildStubWithAuthCredentials(MappingBuilder mappingBuilder, Authentication expectedAuthentication) {
+        if (expectedAuthentication instanceof UserAuthentication) {
+            UserAuthentication userAuthentication = (UserAuthentication) expectedAuthentication;
             mappingBuilder.withBasicAuth(userAuthentication.getUserName(), userAuthentication.getPassword());
         } else {
-            ServiceAuthentication serviceAuthentication = (ServiceAuthentication) authentication;
+            ServiceAuthentication serviceAuthentication = (ServiceAuthentication) expectedAuthentication;
             mappingBuilder.withHeader("X-Api-Key", equalTo(serviceAuthentication.getToken()));
         }
         return mappingBuilder.build();
