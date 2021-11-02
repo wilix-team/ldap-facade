@@ -3,8 +3,10 @@ package dev.wilix.ldap.facade.server;
 import com.unboundid.ldap.sdk.*;
 import com.unboundid.util.LDAPTestUtils;
 import dev.wilix.ldap.facade.api.DataStorage;
+import dev.wilix.ldap.facade.server.config.properties.ServerConfigurationProperties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +27,9 @@ public class ServerTest {
             return new TestStorage();
         }
     }
+
+    @Autowired
+    ServerConfigurationProperties serverConfigurationProperties;
 
     @Test
     public void positiveUserAuthenticate() throws LDAPException {
@@ -264,7 +269,7 @@ public class ServerTest {
     }
 
     private LDAPConnection openLDAP() throws LDAPException {
-        return new LDAPConnection("localhost", 636);
+        return new LDAPConnection("localhost", serverConfigurationProperties.getPort());
     }
 
     private BindResult userBindResult(LDAPConnection ldap) throws LDAPException {
