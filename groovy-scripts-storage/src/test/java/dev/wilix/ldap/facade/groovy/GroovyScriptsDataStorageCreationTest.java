@@ -1,7 +1,7 @@
 package dev.wilix.ldap.facade.groovy;
 
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.FileNotFoundException;
