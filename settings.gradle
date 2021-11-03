@@ -5,4 +5,5 @@ include 'server'
 include 'espo-storage'
 include 'file-storage'
 include 'integration-tests'
+include 'groovy-scripts-storage'
 
