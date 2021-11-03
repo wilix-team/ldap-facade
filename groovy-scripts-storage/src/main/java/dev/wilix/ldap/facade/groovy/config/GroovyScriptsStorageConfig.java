@@ -21,7 +21,7 @@ public class GroovyScriptsStorageConfig {
 
     @Bean
     public DataStorage groovyDataStorage() {
-        URI scriptUri = configurationProperties.getPathToScript().toUri();
+        URI scriptUri = configurationProperties.getScriptPath().toUri();
         return new GroovyScriptsDataStorage(scriptUri);
     }
 }

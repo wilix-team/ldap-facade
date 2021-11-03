@@ -3,7 +3,9 @@ package dev.wilix.ldap.facade.groovy;
 import dev.wilix.ldap.facade.api.Authentication;
 import dev.wilix.ldap.facade.api.DataStorage;
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,24 +15,27 @@ import java.util.Map;
 
 public class GroovyScriptsDataStorage implements DataStorage {
 
-    private final GroovyObject targetClass;
+    /**
+     *  Обернутый объект DataStorage из Groovy
+     */
+    private final DataStorage groovyDataStorage;
+
+    Logger logger = LoggerFactory.getLogger(GroovyClassLoadException.class);
 
     public GroovyScriptsDataStorage(URI scriptUri) {
         GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
 
         try {
             Class<?> loadedClass = loader.parseClass(new File(scriptUri));
+            this.groovyDataStorage = (DataStorage) loadedClass.getDeclaredConstructor().newInstance();
+        }
 
-            // Проверка на то, что класс реализует интерфейс DataStorage
+        catch (CompilationFailedException e) {
+            throw new GroovyClassLoadException("Error while compiling script.", e);
+        }
 
-            if (loadedClass.isAssignableFrom(DataStorage.class)) {
-                this.targetClass = (GroovyObject) loadedClass.getDeclaredConstructor().newInstance();
-            }
-
-            else {
-                throw new ReflectiveOperationException("Target groovy class " + loadedClass.getName() +
-                        " is not implements DataStorage interface.");
-            }
+        catch (ClassCastException e) {
+            throw new GroovyClassLoadException("Class cast exception after creating groovy class instance.", e);
         }
 
         catch (ReflectiveOperationException e) {
@@ -44,21 +49,21 @@ public class GroovyScriptsDataStorage implements DataStorage {
 
     @Override
     public Authentication authenticateUser(String userName, String password) {
-        return null;
+        return groovyDataStorage.authenticateUser(userName, password);
     }
 
     @Override
     public Authentication authenticateService(String serviceName, String token) {
-        return null;
+        return groovyDataStorage.authenticateService(serviceName, token);
     }
 
     @Override
     public List<Map<String, List<String>>> getAllUsers(Authentication authentication) {
-        return null;
+        return groovyDataStorage.getAllUsers(authentication);
     }
 
     @Override
     public List<Map<String, List<String>>> getAllGroups(Authentication authentication) {
-        return null;
+        return groovyDataStorage.getAllGroups(authentication);
     }
 }

@@ -11,11 +11,11 @@ public class GroovyScriptsConfigurationProperties {
     @NotEmpty
     private Path scriptPath;
 
-    public Path getPathToScript() {
+    public Path getScriptPath() {
         return scriptPath;
     }
 
-    public void setPathToScript(Path pathToScript) {
-        this.scriptPath = pathToScript;
+    public void setScriptPath(Path scriptPath) {
+        this.scriptPath = scriptPath;
     }
 }
