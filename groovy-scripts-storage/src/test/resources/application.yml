@@ -1,0 +1,5 @@
+storage:
+  # Тип используемого хранилища пользователей
+  type: 'groovy'
+  groovy:
+    scriptPath: "GroovyTestStorage.groovy"
