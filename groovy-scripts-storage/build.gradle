@@ -1,11 +1,3 @@
-plugins {
-    id 'groovy'
-    id 'java'
-}
-
-group 'dev.wilix.ldap-facade'
-version '2.1.0'
-
 repositories {
     mavenCentral()
 }
@@ -22,8 +14,4 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
     }
-}
-
-test {
-    useJUnitPlatform()
 }

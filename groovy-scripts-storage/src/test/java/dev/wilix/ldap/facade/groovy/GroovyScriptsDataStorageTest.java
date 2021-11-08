@@ -21,14 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GroovyScriptsDataStorageTest {
 
     @Autowired
-    private GroovyScriptsConfigurationProperties prop;
-
     private DataStorage dataStorage;
-
-    @BeforeEach
-    void setUp() throws URISyntaxException {
-        dataStorage = new GroovyScriptsDataStorage(prop.getScriptPath().toUri());
-    }
 
     @Test
     void authenticateUser() {

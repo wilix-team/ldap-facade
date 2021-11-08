@@ -1,7 +1,10 @@
-package dev.wilix.ldap.facade.groovy;
+package dev.wilix.ldap.facade.groovy.config;
 
+import dev.wilix.ldap.facade.groovy.GroovyClassLoadException;
+import dev.wilix.ldap.facade.groovy.TestGroovyApplication;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.FileNotFoundException;
@@ -17,18 +20,19 @@ public class GroovyScriptsDataStorageCreationTest {
 
     private final String WRONG_SYNTAX_NAME = "GroovyWrongSyntax.groovy";
 
+    @Autowired
+    private GroovyScriptsStorageConfig config;
+
     @Test
     public void wrongClass() throws URISyntaxException {
         URI uri = Objects.requireNonNull(getClass().getClassLoader().getResource(WRONG_FILE_NAME)).toURI();
 
-        assertThrows(GroovyClassLoadException.class, () -> {
-            new GroovyScriptsDataStorage(uri);
-        });
+        assertThrows(GroovyClassLoadException.class, () -> config.groovyDataStorage(uri));
 
         // Провека того, что именно ClassCastException стала причиной
 
         try {
-            new GroovyScriptsDataStorage(uri);
+            config.groovyDataStorage(uri);
         }
 
         catch (GroovyClassLoadException groovyException) {
@@ -40,22 +44,16 @@ public class GroovyScriptsDataStorageCreationTest {
     public void syntaxError() throws URISyntaxException {
         URI uri = Objects.requireNonNull(getClass().getClassLoader().getResource(WRONG_SYNTAX_NAME)).toURI();
 
-        assertThrows(GroovyClassLoadException.class, () -> {
-            new GroovyScriptsDataStorage(uri);
-        });
+        assertThrows(GroovyClassLoadException.class, () -> config.groovyDataStorage(uri));
 
         // Провека того, что именно наследник или сам CompilationFailedException стали причиной
 
         try {
-            new GroovyScriptsDataStorage(uri);
+            config.groovyDataStorage(uri);
         }
 
         catch (GroovyClassLoadException groovyException) {
-            try {
-                CompilationFailedException c = (CompilationFailedException) groovyException.getCause();
-            }
-
-            catch (Exception exception) {
+            if (groovyException.getClass().isAssignableFrom(CompilationFailedException.class)) {
                 fail();
             }
         }
@@ -64,7 +62,7 @@ public class GroovyScriptsDataStorageCreationTest {
     @Test
     public void fileNotFound() throws URISyntaxException {
         try {
-            new GroovyScriptsDataStorage(new URI("file:///never/exists/path/PlsDontCreateThisFile.groovy"));
+            config.groovyDataStorage(new URI("file:///never/exists/path/PlsDontCreateThisFile.groovy"));
             fail(); // если сюда дошел - нет эксепшена => fail
         }
 
