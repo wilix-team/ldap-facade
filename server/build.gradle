@@ -13,6 +13,7 @@ dependencies {
     // Хранилища
     api project(':espo-storage')
     api project(':file-storage')
+    api project(':groovy-scripts-storage')
 
     api 'com.unboundid:unboundid-ldapsdk:5.1.1'
 
