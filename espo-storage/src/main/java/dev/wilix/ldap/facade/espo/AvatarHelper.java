@@ -34,7 +34,7 @@ public class AvatarHelper {
             LOG.debug("Problem with URIBuilder:", e);
             throw new IllegalStateException("Problem with URIBuilder", e);
         }
-        // FIXME Вероятно придется проверять тип возвращаемой картинки и её переводить в jpeg формат.
+        // FIXME Will probably have to check the type of the returned image and convert it to jpeg format.
         return convertByteArrayToString(requestHelper.sendCrmRequestForBytes(avatarUri, authentication));
     }
 

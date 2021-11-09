@@ -3,7 +3,7 @@ import dev.wilix.ldap.facade.api.DataStorage
 
 class GroovyWrongSyntax implements DataStorage{
 
-    // Тут и должен быть +, все хорошо. Это тест неверного синтаксиса
+    // Wrong syntax there! This is how it should be, this is a test
     String + wrongSyntax() {
         return "123"
     }

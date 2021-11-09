@@ -1,7 +1,7 @@
 package dev.wilix.ldap.facade.groovy;
 
 /**
- * Runtime обертка для эксепшенов, возникающих во время чтения и создания объекта класса из Groovy.
+ * Runtime wrapper for exceptions, thrown during Groovy class loading.
  */
 public class GroovyClassLoadException extends RuntimeException {
     public GroovyClassLoadException() {

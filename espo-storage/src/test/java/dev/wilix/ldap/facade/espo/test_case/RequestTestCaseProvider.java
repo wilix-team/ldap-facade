@@ -1,7 +1,7 @@
 package dev.wilix.ldap.facade.espo.test_case;
 
 /**
- * Предоставляет тестовые кейсы с запросом.
+ * Represents request test cases.
  */
 public class RequestTestCaseProvider extends TestCaseProvider {
 

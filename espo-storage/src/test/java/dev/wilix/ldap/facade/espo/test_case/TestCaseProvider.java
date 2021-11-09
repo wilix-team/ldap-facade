@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 /**
- * Класс для загрузки и парсинга тестового кейса.
+ * Load and parse test case.
  */
 public abstract class TestCaseProvider implements ArgumentsProvider {
 

@@ -1,9 +1,9 @@
 storage:
-  # Тип используемого хранилища пользователей
+  # Storage type
   type: 'espo'
   espo:
-    cacheExpirationMinutes: 0 # кэш отключён для тестирования
-    baseUrl: http://localhost:8080 # смотрит на wireMock
+    cacheExpirationMinutes: 0 # Disable cache for testing
+    baseUrl: http://localhost:8080 # WireMock
     loadAvatars: true
     additionalUserAttributes:
       'company': [wilix]

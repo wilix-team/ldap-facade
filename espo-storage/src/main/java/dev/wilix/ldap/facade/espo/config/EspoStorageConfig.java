@@ -60,7 +60,7 @@ public class EspoStorageConfig {
     public HttpClient httpClient() {
         return HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(10)) // TODO Возможно потребуется выносить в настройки.
+                .connectTimeout(Duration.ofSeconds(10)) // TODO May need to make it into the settings.
                 .build();
     }
 

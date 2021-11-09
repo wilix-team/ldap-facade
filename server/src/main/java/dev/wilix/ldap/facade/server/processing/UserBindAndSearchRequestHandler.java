@@ -38,17 +38,15 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
     private final LDAPListenerClientConnection connection;
 
-    // Обработчики запросов.
+    // Handlers.
     private final BindOperationProcessor bindOperationProcessor;
     private final SearchOperationProcessor searchOperationProcessor;
 
-    // Информация о аутентифицированном пользователе.
+    // User authentication information.
     private Authentication authentication;
 
     /**
-     * Для первичного создания обработчика.
-     * При работе слушатель соединений будет использовать метод newInstance,
-     * где уже присутствует экземпляр соединения.
+     * Constructor to create a handler for the first time. During the working, connection listener would use newInstance.
      */
     public UserBindAndSearchRequestHandler(BindOperationProcessor bindOperationProcessor,
                                            SearchOperationProcessor searchOperationProcessor) {
@@ -84,7 +82,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     ex.getResponseControls());
         } catch (Exception ex) {
             LOG.warn("Bind operation [{}] interrupted with not expected error: {}", request, ex);
-            // FIXME Возможно другое сообщение...
+            // FIXME Another message?...
             return new LDAPMessage(messageID, new BindResponseProtocolOp(
                     ResultCode.OTHER_INT_VALUE, null,
                     "Unexpected errors occurred!",
@@ -101,8 +99,8 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
 
         LOG.info("There was a successful authentication {}.", authResult);
 
-        // Как правило, первой в соединении происходит аутентификация сервиса с токеном, а затем пользователей.
-        // Поэтому присваивается только результат первой аутентификации.
+//        As a rule, the service with the token is first authenticated in the connection, and then the users.
+//        Therefore, only the result of the first authentication is assigned.
         if (this.authentication == null) {
             this.authentication = authResult;
         }
@@ -140,14 +138,14 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
                     ex.getResponseControls());
         } catch (Exception ex) {
             LOG.warn("Search operation [{}] interrupted with not expected error: {}", request, ex);
-            // FIXME Возможно другое сообщение...
+            // FIXME Another message?...
             return new LDAPMessage(messageID, new SearchResultDoneProtocolOp(
                     ResultCode.OTHER_INT_VALUE, null,
                     "Unexpected errors occured!",
                     null));
         }
 
-        // Отправка информации о записях.
+        // Sending data about entries
         for (Entry resultEntry : foundedEntries) {
             try {
                 connection.sendSearchResultEntry(messageID, resultEntry);
@@ -161,7 +159,7 @@ public class UserBindAndSearchRequestHandler extends AllOpNotSupportedRequestHan
             }
         }
 
-        // Успешное завершение операции.
+        // Successful completion of the operation.
         LOG.info("Search operation finished successfully with results {}", foundedEntries);
         return new LDAPMessage(messageID,
                 new SearchResultDoneProtocolOp(ResultCode.SUCCESS_INT_VALUE, null,

@@ -251,10 +251,11 @@ public class ServerTest {
         checkSearchResults(2, bindResult, searchResult, attributes);
     }
 
-    // FIXME Есть вероятность указать в атрибутах уникальные атрибуты как для пользователей, так и для групп,
-    //  поэтому тест упадёт, т.к. проверка атрибутов на данный момент проверяет сущности по всем своим атрибутам.
-    //  Если же отправить на проверку через другой метод (по указанному списку атрибутов), то проверка упадёт, т.к. не
-    //  найдёт значений для уникальных атрибутов другой сущности.
+    // FIXME
+    //  Possible to specify uniques attributes for both users and groups, therefore test will fail. Attribute validation
+    //  currently validates entities against all of their attributes. If you send it for verification via another method
+    //  (according to the specified list of attributes), then the verification will fail, because will not find values
+    //  for unique attributes of another entity
     @Test
     public void searchAllEntityAndReceiveThemWithCertainAttributes() throws LDAPException {
         BindResult bindResult;

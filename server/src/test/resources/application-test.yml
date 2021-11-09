@@ -1,5 +1,5 @@
-# На mac для открытия портов до 1024-го требуются права root. Для проведения тестов
-# без root-прав может быть выбран порт, который больше 1024.
+# On mac, opening ports up to 1024 requires root privileges. For testing without root rights, a port greater than 1024
+# should be selected.
 listener:
   port: 6360
 

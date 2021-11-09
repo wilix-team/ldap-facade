@@ -1,4 +1,4 @@
-project.description 'Основное внешнее api для реализации источников данных для ldap'
+project.description 'Main external api for implementing data sources for ldap'
 
 publishing {
     publications {

@@ -1,68 +1,80 @@
-# crm-ldap-facade
+# CRM LDAP Facade
 
-Имитация ldap хранилища для абстрактного источника пользователей и групп.
+Ldap storage imitation for abstract source of users and groups.
 
-Может использоваться как мост для соединения хранилища пользователей с другими информационными системами компании.
+It can be used as a bridge to connect the user storage with other information systems of the company.
 
-Т.к. интеграцию с ldap предоставляет очень много информационных систем,
-это решение упрощает построение инфраструктуры в компании на основе единой учетной записи пользователя.
+Because Ldap integration represented by a large variety information systems, this solution simplifies building company
+infrastructure based on a single user account.
 
-Для простоты ldap-server поддерживает только две операции - bind и search. Этого хватает для всех на текущий момент интегрированных систем.
+For simplicity Ldap-server supports only bind and search operations. This is enough for all currently integrated systems.
 
-На текущий момент поддерживается два типа хранилища пользователей и групп:
-- на основе [espo CRM](https://www.espocrm.com)
-- на основе json файла
+At this moment supports three types of user and groups storages:
+- Based at [espo CRM](https://www.espocrm.com)
+- Based at JSON files
 
-Так же пользователи могут реализовать свою собственную реализацию, интерфейс хранилища пользователей достаточно простой. 
+Also, users can implement his own realisation of storage. Storage has simple interface.
 
-## Подготовка хранилища для ключей.
+## Preparing storage for keys
 
-Подготовка пары ключ-сертификат в формате PKCS12
+Preparing a couple of key and certificate in PKS12 format.
+
 ```$bash
 openssl pkcs12 -export -in fullchain1.pem -inkey privkey1.pem -out keystore.p12 -name s2.wilix.dev -CAfile isrgrootx1.pem -caname letsencrypt
 ```
 
-Импортирование в Java Key Store формат
-```bash
-keytool -importkeystore -deststorepass <passwd> -destkeypass <passwd> -destkeystore .keystore -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass <наш пароль для keystore.p12> -alias myhostname
+Importing to Java Key format.
+
+```$bash
+keytool -importkeystore -deststorepass <passwd> -destkeypass <passwd> -destkeystore .keystore -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass <our password for keystore.p12> -alias myhostname
 ```
 
-После этого можно пользоваться хранилищем на стороне сервера.
+After this you can use storage at server.
 
-Если сертификат не подписан, то требуются дополнительные подготовительные работы на стороне клиента.
+If certificate is not signed, then requires addition client-side preparatory work.
 
-## Запуск.
+## Launch
 
-```bash
- LISTENER_PORT=10637 LISTENER_KEYSTOREPATH='C:\Users\Van\sandbox\certs\fck.keystore' LISTENER_KEYSTOREPASS=wilix1234 java -Xmx20m -jar crm-ldap-facade-1.0-SNAPSHOT.jar
+```$bash
+LISTENER_PORT=10637 LISTENER_KEYSTOREPATH='C:\Users\Van\sandbox\certs\fck.keystore' LISTENER_KEYSTOREPASS=wilix1234 java -Xmx20m -jar crm-ldap-facade-1.0-SNAPSHOT.jar
 ```
 
-##### Запуск в docker контейнере
-1. Собрать образ 
+##### Launch in docker container
+
+1. Build the image.
+
 ```bash
 grandlew clean build docker
 ```
-2. Или получить из приватного репозитория компании готовый образ (docker.wilix.dev)
-3. Запустить образ. Требуется не забыть в контейнер пробросить хранилище ключей, сформированное ранее.
+
+2. Or get ready-made company image from company's private repository (docker.wilix.dev).
+
+3. Launch image. It is required not to forget to put the previously generated keystore.
+
 ```bash
 docker run --name ldap-facade -p 10636:10636 crm-ldap-facade:1.0.0
 ```
 
-#### Ограничения
+#### Restrictions
 
-Существует ограничение на сложность фильтров в запросах на поиск записей.
-Внутри приложения производится простой поиск для атрибутов имени и класса на одно-единственное вхождение.
-Т.е. сложные фильтры, которые содержат несколько условий для одного имени атрибута не будут корректно работать.
+There is a restrictions on the complexity of the filters in search requests. Inside application, a simple search is
+performed for a single occurrence for the name and class attributes. That is, complex that contain multiple conditions
+for single attribute should not work fine.
 
-## Настройка публикации библиотек в удалённый Maven репозиторий
+## Configuring publishing libraries to Maven repository
 
-1. Для публикации библиотек в удалённый репозиторий и возможности их последующего подтягивания в другой проект необходимо в build.gradle корневого проекта добавить:
+1. For publishing libraries in Maven repository and possibility of their using as dependency it another project you
+should add this in your root project build.gradle:
+
 ```
 mavenUser=someUsername
 mavenPassword=somePassword
 ```
-2. Обновить версию. Например:
+
+2. Update the version. For example:
+
 ```
 version '1.0.0-SNAPSHOT'
 ```
-3. Для публикации библиотек запустить задачу "publish".
+
+3. To start libraries publication run task "publish".

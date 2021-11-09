@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * TODO Вынести названия атрибутов member и memberOf в настройки ldap.
+ * TODO Move names of member and memberOf attributes to ldap configuration.
  */
 public class SearchOperationProcessor {
 
@@ -63,14 +63,14 @@ public class SearchOperationProcessor {
                     .map(info -> prepareSearchResultEntry(info.get("dn").get(0), info))
                     .collect(Collectors.toList()));
         } catch (ExecutionException e) {
-            // FIXME Обрабатывать или формировать ошибку более корректно. Возможно прикрутить лог.
+            // FIXME Handle or generate exception more correctly. Maybe add a log.
             throw new RuntimeException(e.getCause());
         }
 
         List<Entry> resultEntries = new ArrayList<>(allEntries.size());
         SearchEntryParer parer = new SearchEntryParer(request.getAttributes(), null);
         for (Entry resultEntry : allEntries) {
-            // Фильтруем записи в соответствие с запросом.
+            // Filtering records according to the request.
             if (resultEntry.matchesBaseAndScope(request.getBaseDN(), request.getScope()) &&
                     request.getFilter().matchesEntry(resultEntry)) {
                 resultEntries.add(parer.pareEntry(resultEntry));
@@ -97,21 +97,21 @@ public class SearchOperationProcessor {
     }
 
     /**
-     * Постобработка полученной из хранилища записи.
-     * На текущий момент:
-     * - добавляется dn атрибут, если нету
-     * - преобразуется формат имени группы/участника в dn
-     * - добавляется атрибут с классом объекта.
+     * Post-processing of the record received from the storage.
+     * Steps of post-processing at this moment:
+     * - Adding dn attribute, if it does not exist
+     * - Converts the group / member name format to dn
+     * - Adding object class attribute.
      */
     private Map<String, List<String>> postProcessEntryInfo(Map<String, List<String>> info, EntityType entityType) {
-        // Оборачиваем результат, т.к. не уверены в возможности модифицировать пришедшие данные.
+        // Wrapping result, because info may be immutable.
         var processedInfo = new HashMap<>(info);
 
-        // Преобразуем имена групп/участников в dn
+        // Converts the group / member name format to dn
         addDnName(processedInfo, entityType);
-        // Вычисляем dn если его не добавили ранее.
+        // Computes dn, if it does not exist.
         processedInfo.computeIfAbsent("dn", s -> List.of(namingHelper.generateDnForEntry(info, entityType)));
-        // Проставляем класс объекта, если его еще нет.
+        // Adding object class attribute, if it does not exist.
         processedInfo.computeIfAbsent("objectClass", s -> List.of(namingHelper.getClassName(entityType)));
 
         return processedInfo;
@@ -128,17 +128,17 @@ public class SearchOperationProcessor {
     }
 
     private Entry prepareSearchResultEntry(String entryDn, Map<String, List<String>> info) {
-        // Подготовка ответа в формате ldap.
+        // Preparing ldap answer.
         Entry entry = new Entry(entryDn);
         for (String requestedAttributeName : info.keySet()) {
             final List<String> attributeValues = info
                     .getOrDefault(requestedAttributeName, Collections.emptyList());
             entry.addAttribute(requestedAttributeName, attributeValues.toArray(EMPTY_STRING_ARRAY));
 
-            String userAvatarAttrubuteName = "jpegPhoto";
-            if (info.containsKey(userAvatarAttrubuteName)) {
-                byte[] avatarByteArray = Base64.getDecoder().decode(info.get(userAvatarAttrubuteName).get(0));
-                entry.setAttribute(userAvatarAttrubuteName, avatarByteArray);
+            String userAvatarAttributeName = "jpegPhoto";
+            if (info.containsKey(userAvatarAttributeName)) {
+                byte[] avatarByteArray = Base64.getDecoder().decode(info.get(userAvatarAttributeName).get(0));
+                entry.setAttribute(userAvatarAttributeName, avatarByteArray);
             }
         }
         return entry;

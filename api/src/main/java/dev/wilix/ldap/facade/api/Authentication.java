@@ -17,7 +17,7 @@
 package dev.wilix.ldap.facade.api;
 
 /**
- * Интерфейс для результатов аутентификации во внешнем сервисе.
+ * Interface to store results of authentication in outer class.
  */
 public interface Authentication {
     Authentication NEGATIVE = new Authentication() {

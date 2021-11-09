@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
- * Тестирование работы класса.
+ * Class working test.
  */
 @SpringBootTest(classes = TestGroovyApplication.class)
 class GroovyScriptsDataStorageTest {
@@ -32,7 +32,7 @@ class GroovyScriptsDataStorageTest {
 
     @Test
     void authenticateService() {
-        // Тестовый класс не использует сервисы
+        // Test class don't use any service
         assertEquals(dataStorage.authenticateService("", ""), Authentication.NEGATIVE);
     }
 

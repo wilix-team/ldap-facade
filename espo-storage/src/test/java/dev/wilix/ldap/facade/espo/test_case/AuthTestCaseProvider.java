@@ -1,7 +1,7 @@
 package dev.wilix.ldap.facade.espo.test_case;
 
 /**
- * Предоставляет тестовые кейсы аутентификации.
+ * Represents authentication tests.
  */
 public class AuthTestCaseProvider extends TestCaseProvider {
 

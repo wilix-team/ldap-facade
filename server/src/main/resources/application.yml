@@ -1,47 +1,47 @@
 listener:
   port: 636
-  # Указывает, требуется ли использование защищённого протокола (ldaps).
+  # Indicates whether the use of a secure protocol is required (ldaps).
   sslEnabled: false
-  # Путь к хранилищу ключей сертификатов.
+  # The path to the certificate keystore.
   keyStorePath: \myPath\store.keystore
-  # Пароль от хранилища.
+  # Storage password.
   keyStorePass: password
 
 ldap:
-  # Base DN, используемый в поиске LDAP.
+  # Base DN, used in search LDAP.
   baseDn: 'dc=example,dc=com'
-  # Base DN сервисов.
+  # Base DN of services.
   servicesBaseDn: 'ou=services,dc=example,dc=com'
-  # Base DN пользователей.
+  # Base DN of users.
   usersBaseDn: 'ou=people,dc=example,dc=com'
-  # Base DN групп.
+  # Base DN of groups.
   groupsBaseDn: 'ou=groups,dc=example,dc=com'
-  # Класс объекта аутентифицируемого пользователя.
+  # Authenticated user object class.
   userClassName: 'organizationalPerson'
-  # Класс объекта групп пользователей или групп безопасности.
+  # User group or security group object class.
   groupClassName: 'groupOfNames'
-  # Имя главного атрибута имени пользователя. Оно будет использоваться в построении dn для записей.
+  # The name of the main attribute of the username. It will be used in building dn for records.
   mainNameAttribute: 'uid'
-  # Кеширование операций чтения пользователей и групп.
-  # Происходит на уровне отдельного пользователя (для каждого пользователя свой набор сущностей).
-  # Значение '0' отключает кеширование.
+  # User and group read caching.
+  # It occurs at the level of an individual user (each user has its own set of entities).
+  # 0 disables cache.
   searchCacheExpirationMinutes: 10
 
 storage:
-  # Тип используемого хранилища пользователей
+  # Type of user storage used
   type: 'espo'
   espo:
-    # Указывает, как долго данные хранятся в кэше (в минутах).
+    # Indicates how long data is kept in the cache (in minutes).
     cacheExpirationMinutes: 2
-    # Url-адрес службы хранения пользователей.
+    # Url-address of the user storage service.
     # baseUrl: https://example.com
     baseUrl:
-    # Указываются пользовательские свойства (информация), добавляемая в ответ на запрос получения пользователей.
+    # Custom properties (information) added in response to a get users request.
     # additionalUserAttributes:
     #   'exampleTag': [exampleValue, exampleValue2]
 
   file:
-    # Указывает путь к файлу json, в котором хранятся данные о пользователях и группах.
+    # Path to the json file that stores user and group data.
     pathToFile:
-    # Указывает время ожидания в миллисекундах между проверками файла
+    # Time to wait in milliseconds between file checks.
     fileWatchInterval:
