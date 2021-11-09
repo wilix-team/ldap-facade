@@ -40,7 +40,7 @@ public abstract class AbstractLDAPTest {
     EspoDataStorageConfigurationProperties userStorageConfig;
     @MockBean
     HttpClient httpClient;
-    // FIXME Не нужен тут, можно переработать и донести объявление до конкретных мест применения.
+    // FIXME The field is not needed here. You can redesign and communicate your ad to specific uses.
     @Mock
     protected HttpResponse<String> response;
 
@@ -114,7 +114,7 @@ public abstract class AbstractLDAPTest {
     }
 
     protected void setupSuccessBindResponseBody(boolean isServiceRequest) {
-        //Для успешного бинда нужно json тело иначе код будет OTHER_INT_VALUE (80)
+        // For a successful bind, you need a json body, otherwise the code will be OTHER_INT_VALUE (80)
         when(response.statusCode()).thenReturn(200);
         if (isServiceRequest) {
             when(response.body()).thenReturn(SERVICE_BIND_RESPONSE_BODY);
@@ -172,7 +172,7 @@ public abstract class AbstractLDAPTest {
 
     // HTTP
 
-    //TODO методы дублируют код, в идеале вытягивать реализацию из CrmUserDataStorage
+    //TODO Methods duplicate the code. Take implementation from CrmUserDataStorage
     private HttpRequest buildServiceBindHttpRequest() {
         return HttpRequest.newBuilder()
                 .GET()

@@ -29,7 +29,7 @@ public class GroovyScriptsDataStorageCreationTest {
 
         assertThrows(GroovyClassLoadException.class, () -> config.groovyDataStorage(uri));
 
-        // Провека того, что именно ClassCastException стала причиной
+        // Checking what exactly ClassCastException caused
 
         try {
             config.groovyDataStorage(uri);
@@ -46,7 +46,7 @@ public class GroovyScriptsDataStorageCreationTest {
 
         assertThrows(GroovyClassLoadException.class, () -> config.groovyDataStorage(uri));
 
-        // Провека того, что именно наследник или сам CompilationFailedException стали причиной
+        // Checking what exactly CompilationFailedException caused
 
         try {
             config.groovyDataStorage(uri);
@@ -63,7 +63,7 @@ public class GroovyScriptsDataStorageCreationTest {
     public void fileNotFound() throws URISyntaxException {
         try {
             config.groovyDataStorage(new URI("file:///never/exists/path/PlsDontCreateThisFile.groovy"));
-            fail(); // если сюда дошел - нет эксепшена => fail
+            fail(); // if the code got here - exception not thrown => fail
         }
 
         catch (GroovyClassLoadException groovyException) {

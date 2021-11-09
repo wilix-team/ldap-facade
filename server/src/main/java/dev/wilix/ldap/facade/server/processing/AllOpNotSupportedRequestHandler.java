@@ -31,9 +31,9 @@ import com.unboundid.ldap.sdk.Control;
 import java.util.List;
 
 /**
- * Обработчик ldap запросов, который не обрабатывает ни одной операции.
- * Нужен для упрощения последующих дочерних классов.
- * FIXME Возвращать какой-нибудь корректный негативный ответ клиенту.
+ * Ldap requests handler, that does not process any operations.
+ * Needed to simplify child classes.
+ * FIXME Returns some correct answer to the client.
  */
 public abstract class AllOpNotSupportedRequestHandler extends LDAPListenerRequestHandler {
 

@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Function;
 
 /**
- * Класс для обработки запросов аутентификации.
+ * Class for processing authentication requests.
  */
 public class BindOperationProcessor {
 
@@ -55,7 +55,7 @@ public class BindOperationProcessor {
                     "The server has been configured to only allow bind operations that result in authenticated connections.  Anonymous bind operations are not allowed.");
         }
 
-        // Определение типа клиента (отдельный пользователь или сервис), поиск имени пользователя и выбор способа аутентификации.
+        // Determining the type of client (user or service). Searching user name and select type of authentication.
         Function<String, Authentication> authenticator;
         try {
             String bindDn = request.getBindDN();

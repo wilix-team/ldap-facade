@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Общие утилиты для работы с путями ldap.
+ * Common utils to working with ldap patches.
  */
 public class LdapNamingHelper {
 
@@ -40,7 +40,7 @@ public class LdapNamingHelper {
     public LdapNamingHelper(LdapConfigurationProperties ldapProperties) {
         this.ldapProperties = ldapProperties;
 
-        // FIXME Переработать!
+        // FIXME Rework!
         String mainNameAttr = ldapProperties.getMainNameAttribute();
         userEntryDnPattern = Pattern.compile(mainNameAttr + "=(.*)," + ldapProperties.getUsersBaseDn());
         serviceEntryDnPattern = Pattern.compile(mainNameAttr + "=(.*)," + ldapProperties.getServicesBaseDn());
@@ -71,7 +71,7 @@ public class LdapNamingHelper {
 
     String generateDnForEntry(Map<String, List<String>> entry, EntityType entityType) {
 
-        // FIXME Требуются проверки на корректные значения каждого промежуточного объекта.
+        // FIXME Required checks for the correct values of each intermediate object
         String entityName = entry.get(ldapProperties.getMainNameAttribute()).get(0);
 
         return String.format(entityType.equals(EntityType.USER) ? userNameToDnTemplate : groupNameToDnTemplate, entityName);

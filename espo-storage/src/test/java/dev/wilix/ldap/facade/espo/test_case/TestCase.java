@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Родитель для всех тестовых кейсов.
- * Содержит в себе поля свойственные для каждого типа кейсов.
+ * Parent for all test classes.
+ * Contain fields common to every case type.
  */
 public abstract class TestCase {
 
@@ -30,7 +30,7 @@ public abstract class TestCase {
     }
 
     /**
-     * Информация о запросе для заглушки в кейсе.
+     * Information about the request for the stub in the case.
      */
     public static class TestCaseRequest {
 

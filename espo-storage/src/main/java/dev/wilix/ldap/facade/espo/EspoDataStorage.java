@@ -33,12 +33,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * Хранилище пользователей, построенное на основе Wilix CRM.
+ * User store built on top of Wilix CRM.
  *
- * TODO Требуется перейти на ignoreCaseMap
+ * TODO Migrate to ignoreCaseMap
  */
 public class EspoDataStorage implements DataStorage {
-    // TODO Нужно добавить проверку у пользователей на флаг isActive
+    // TODO Need to add user verification to the flag isActive
     private final static Logger LOG = LoggerFactory.getLogger(EspoDataStorage.class);
     private static final String USER_AVATAR_PROPERTY_NAME = "jpegPhoto";
 
@@ -81,10 +81,12 @@ public class EspoDataStorage implements DataStorage {
         }
     }
 
+    // TODO Solve code duplications
+
     @Override
     public Authentication authenticateUser(String userName, String password) {
         try {
-            // Если вернется без ошибки - все хорошо.
+            // If it returns without error, everything is fine.
             Map<String, List<String>> userInfo = checkAuthentication(new UserAuthentication(userName, password));
 
             if (userInfo.isEmpty()) {
@@ -101,7 +103,7 @@ public class EspoDataStorage implements DataStorage {
     @Override
     public Authentication authenticateService(String serviceName, String token) {
         try {
-            // Если вернется без ошибки - все хорошо.
+            // If it returns without error, everything is fine.
             Map<String, List<String>> userInfo = checkAuthentication(new ServiceAuthentication(serviceName, token));
 
             if (userInfo.isEmpty()) {
@@ -144,8 +146,8 @@ public class EspoDataStorage implements DataStorage {
                 .map(entityParser::parseGroupInfo)
                 .collect(Collectors.toList());
 
-        // FIXME Подумать, что делать с таким явным объявление названий атрибутов.
-        // Получаем участников групп на основе списка пользователей и обогащаем этой информацией группы.
+        // FIXME Think about what to do with such an explicit declaration of attribute names.
+        // Get group members based on the list of users and enrich the groups with this information.
         var users = getAllUsers(authentication);
         Map<String, List<String>> groupToUsers = new HashMap<>();
         for (Map<String, List<String>> user : users) {

@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Реализация хранилища пользователей и групп на основе файла.
+ * Implementing a file-based user and group storage.
  */
 public class FileDataStorage implements DataStorage {
 
@@ -52,11 +52,10 @@ public class FileDataStorage implements DataStorage {
             users = parseResult.getUsers();
             groups = parseResult.getGroups();
 
-            // Кладем информацию о пароле пользователя в отдельное хранилище
-            // и удаляем пароли из основного, что-бы пароли не утекали наружу.
+            // Puts data about password in separate storage and deletes it from main storage.
             Map<String, String> newUsersPasswordInfo = new HashMap<>();
             for (Map<String, List<String>> user : users) {
-                // TODO Безопасно брать поля из пользователя.
+                // TODO Make it grabs fields safely
                 newUsersPasswordInfo.put(user.get("uid").get(0), user.get("password").get(0));
                 user.remove("password");
             }
@@ -87,12 +86,11 @@ public class FileDataStorage implements DataStorage {
     }
 
     /**
-     * Аутентификация сервисного аккаунта.
+     * Service account authentication.
      *
-     * В данном хранилище не используется сервисная аутентификация по причине того, что
-     * никакой запрос на сервер не отправляется, а пользовательская аутентификация проходит
-     * путём проверки наличия соответствующих логина и пароля пользователя в локальном файле формата json,
-     * содержащем исключительно данные пользователей и групп.
+     * Service authentication is not used in this repository due to the fact that there is no request to the server.
+     * Authentication by checking for the presence of the appropriate username and password in a local json file
+     * containing exclusively user and group data.
      */
     @Override
     public Authentication authenticateService(String serviceName, String token) {

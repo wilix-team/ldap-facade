@@ -7,15 +7,15 @@ ldap:
   servicesBaseDn: 'ou=services,dc=company,dc=com'
   usersBaseDn: 'ou=people,dc=company,dc=com'
   groupsBaseDn: 'ou=groups,dc=company,dc=com'
-  userClassName: 'organizationalPerson' # TODO Посмотреть, какой сюда подставить.
+  userClassName: 'organizationalPerson' # TODO Look up what place there.
   groupClassName: 'groupOfNames'
   mainNameAttribute: 'uid'
-  searchCacheExpirationMinutes: 0 # Для тестирования отключаем кеширование
+  searchCacheExpirationMinutes: 0 # Cache disabled for tests
 
 storage:
   type: 'espo'
   espo:
-    cacheExpirationMinutes: 0 # Для тестирования отключаем кеширование
+    cacheExpirationMinutes: 0 # Cache disabled for tests
     baseUrl: https://crm.company.org
     additionalUserAttributes:
       'company': [company]

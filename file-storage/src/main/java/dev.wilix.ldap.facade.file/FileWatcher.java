@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 
 /**
- * Класс для отслеживания изменений в каком-либо файле.
+ * Class for tracking changes in any file.
  */
 public class FileWatcher {
     private final static Logger LOGGER = LoggerFactory.getLogger(FileWatcher.class);
@@ -49,7 +49,7 @@ public class FileWatcher {
         this.pathToFile = pathToFile;
         this.fileWatchInterval = watchIntervalMillis;
         this.fileContentListener = fileContentListener;
-        this.fileName = pathToFile.getFileName().toString(); // TODO Рассмотреть возможность удаления этого поля.
+        this.fileName = pathToFile.getFileName().toString(); // TODO Consider removing this field.
     }
 
     public void watchFileChanges() {
@@ -57,7 +57,7 @@ public class FileWatcher {
     }
 
     /**
-     * Подготовка "отслеживателя" для файла.
+     * Preparing a tracker for a file.
      */
     private FileAlterationObserver createObserver() {
         String directory = pathToFile.getParent().toString();
@@ -80,7 +80,7 @@ public class FileWatcher {
     }
 
     /**
-     * Обработка события изменения файла.
+     * Handling the file change event.
      */
     private void processChangeEvent() {
         String fileContent;
@@ -93,7 +93,7 @@ public class FileWatcher {
     }
 
     /**
-     * Запуск отслеживания файла.
+     * Start tracking a file.
      */
     private void watch(FileAlterationObserver observer){
         FileAlterationMonitor monitor = new FileAlterationMonitor(fileWatchInterval, observer);

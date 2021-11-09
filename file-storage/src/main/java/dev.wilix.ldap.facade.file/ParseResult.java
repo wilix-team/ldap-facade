@@ -20,10 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Выдача результатов парсинга файла.
+ * Results of parsing file.
  * <p>
- * Класс предназначен для хранения и выдачи из результатов парсинга файла, полученных в классе FileParser,
- * информации пользователей и групп.
+ * The class intended to store and issue results of FileParser
  */
 
 class ParseResult {

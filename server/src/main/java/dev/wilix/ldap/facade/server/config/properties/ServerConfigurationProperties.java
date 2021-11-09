@@ -19,7 +19,7 @@ package dev.wilix.ldap.facade.server.config.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * TODO Включить валидацию для этой штуки.
+ * TODO Enable validation.
  */
 @ConfigurationProperties(prefix = "listener")
 public class ServerConfigurationProperties {

@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Validated // TODO Добавить зависимость и навесить валидацию для полей.
+@Validated // TODO Add fields validation
 @ConfigurationProperties(prefix = "storage.espo")
 public class EspoDataStorageConfigurationProperties {
 

@@ -20,42 +20,41 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Интеграционный интерфейс для получения данных из внешнего источника.
+ * Integration interface for receiving data from an external source.
  */
 public interface DataStorage {
 
     /**
-     * Прямая аутентификация пользователя.
+     * Direct user authentication.
      *
-     * @param userName Имя пользователя.
-     * @param password Пароль пользователя.
-     * @return Результат аутентификации.
+     * @param userName User name.
+     * @param password User password.
+     * @return Result of authentication.
      */
     Authentication authenticateUser(String userName, String password);
 
     /**
-     * Аутентификация сервисного аккаунта.
+     * Service account authentication.
      *
-     * @param serviceName Имя сервисной записи.
-     * @param token       Токен для работы с API.
-     * @return Результат аутентификации.
+     * @param serviceName Service name.
+     * @param token       API token.
+     * @return Result of authentication.
      */
     Authentication authenticateService(String serviceName, String token);
 
     /**
-     * Получение списка пользователей с группами
+     * Getting a list of users with groups.
      *
-     * @param authentication Информация о текущей аутентификации пользователя\сервиса
-     * @return Результат поиска
+     * @param authentication Information about the current user \ service authentication.
+     * @return Result of search.
      */
     List<Map<String, List<String>>> getAllUsers(Authentication authentication);
 
     /**
-     * Получение списка групп с пользователями
+     * Getting a list of groups with users
      *
-     * @param authentication Информация о текущей аутентификации пользователя\сервиса
-     * @return Результат поиска
+     * @param authentication Information about the current user \ service authentication.
+     * @return Result of search
      */
     List<Map<String, List<String>>> getAllGroups(Authentication authentication);
-
 }

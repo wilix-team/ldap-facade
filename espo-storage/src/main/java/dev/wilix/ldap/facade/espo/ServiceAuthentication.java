@@ -22,7 +22,7 @@ import dev.wilix.ldap.facade.api.Authentication;
 import java.util.Objects;
 
 /**
- * Результат аутентификации сервисного аккаунта в CRM.
+ * The result of the service account authentication in CRM.
  */
 class ServiceAuthentication implements Authentication {
     private final String serviceName;

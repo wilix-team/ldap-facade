@@ -9,7 +9,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'commons-io:commons-io:2.11.0' // Idea врет - версия 20030203.000550 за 2005 год.
+    implementation 'commons-io:commons-io:2.11.0'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'

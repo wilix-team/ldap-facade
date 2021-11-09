@@ -19,7 +19,7 @@ package dev.wilix.ldap.facade.file;
 import dev.wilix.ldap.facade.api.Authentication;
 
 /**
- * Класс для отображения успешной аутентификации пользователя из файла.
+ * Class for store successful user authentication from a file.
  */
 class FileUserAuthentication implements Authentication {
     private String userName;
