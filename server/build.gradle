@@ -1,34 +1,30 @@
 plugins {
-    id 'org.springframework.boot' version '2.3.5.RELEASE'
+    id 'org.springframework.boot' version '2.5.6'
 }
 
-description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
+description 'Main ldap facade application. Its implements server for handling incoming connections.'
 
 dependencies {
-    implementation platform('org.springframework.boot:spring-boot-dependencies:2.3.5.RELEASE')
+    implementation platform('org.springframework.boot:spring-boot-dependencies:2.5.6')
     implementation 'org.springframework.boot:spring-boot-starter'
 
     api project(':api')
 
-    // Хранилища
+    // Storages
     api project(':espo-storage')
     api project(':file-storage')
     api project(':groovy-scripts-storage')
 
-    api 'com.unboundid:unboundid-ldapsdk:5.1.1'
+    api 'com.unboundid:unboundid-ldapsdk:6.0.2'
 
     implementation 'org.apache.commons:commons-text:1.9'
-    implementation 'com.google.guava:guava:30.0-jre'
+    implementation 'com.google.guava:guava:31.0.1-jre'
 
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.11.3'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
     }
-}
-
-test {
-    useJUnitPlatform()
 }
 
 jar {
@@ -38,6 +34,7 @@ jar {
 bootJar {
     classifier = 'boot'
 }
+
 publishing {
     publications {
         bootJava(MavenPublication) {

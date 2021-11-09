@@ -1,17 +1,17 @@
 plugins {
-    id 'org.springframework.boot' version '2.3.5.RELEASE'
+    id 'org.springframework.boot' version '2.5.6'
 }
 
 project.description 'Реализация хранилища пользователей, как адаптера к espo-crm'
 
 dependencies {
-    implementation platform('org.springframework.boot:spring-boot-dependencies:2.3.5.RELEASE')
+    implementation platform('org.springframework.boot:spring-boot-dependencies:2.5.6')
 
     implementation project(":api")
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.google.guava:guava:30.0-jre'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.3'
+    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
     implementation 'org.apache.commons:commons-text:1.9'
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'
 
@@ -19,10 +19,6 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-}
-
-test {
-    useJUnitPlatform()
 }
 
 jar {
