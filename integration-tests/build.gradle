@@ -11,7 +11,7 @@ dependencies {
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.4'
 
-    testImplementation('org.springframework.boot:spring-boot-starter-test:2.5.6') {
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
     }
 }

@@ -2,15 +2,15 @@ plugins {
     id 'org.springframework.boot' version '2.5.6'
 }
 
-description 'Основное приложение ldap фасада. Реализует сервер для обработки входящих соединений.'
+description 'Main ldap facade application. Its implements server for handling incoming connections.'
 
 dependencies {
     implementation platform('org.springframework.boot:spring-boot-dependencies:2.5.6')
-    implementation 'org.springframework.boot:spring-boot-starter:2.5.6'
+    implementation 'org.springframework.boot:spring-boot-starter'
 
     api project(':api')
 
-    // Хранилища
+    // Storages
     api project(':espo-storage')
     api project(':file-storage')
     api project(':groovy-scripts-storage')
@@ -22,7 +22,7 @@ dependencies {
 
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
 
-    testImplementation('org.springframework.boot:spring-boot-starter-test:2.5.6') {
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage:junit-vintage-engine', module: 'junit-vintage-engine'
     }
 }
